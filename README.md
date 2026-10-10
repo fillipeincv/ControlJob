@@ -9,6 +9,7 @@ Aplicação Java para controle de consertos, comissões e salário.
   - valor total dos consertos
   - comissão acumulada
   - salário total (fixo + comissão)
+- Salário fixo editável pelo painel do administrador (salvo no banco, com histórico preservado nos relatórios já gerados)
 - Tipos de conserto e comissão:
   - **Consertos em Geral** → 5%
   - **Reparo de Placa** → 50%
@@ -25,11 +26,9 @@ Abra: [http://localhost:8080](http://localhost:8080)
 
 ## Configuração
 
-O salário fixo padrão é **R$ 1.500,00**. Para alterar, edite em `src/main/resources/application.properties`:
+O salário fixo padrão é **R$ 1.500,00**. Esse valor é apenas o ponto de partida: depois de configurado, ele fica **salvo no banco de dados** e pode ser alterado pela tela **Admin → Salário fixo**, sem editar código nem reiniciar a aplicação. A mudança passa a valer para o dashboard e para os próximos fechamentos; relatórios já gerados mantêm o valor da época.
 
-```properties
-controljob.salario-fixo=1500.00
-```
+O valor inicial ainda pode ser definido na subida, via `CONTROLJOB_SALARIO_FIXO` (usado apenas quando ainda não existe valor salvo).
 
 Os dados ficam salvos em `./data/controljob` (banco H2 em arquivo).
 

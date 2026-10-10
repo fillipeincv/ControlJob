@@ -749,6 +749,35 @@ th {
     background: linear-gradient(90deg, #e86b6b, #d14545);
 }
 
+/* Salário fixo editável */
+
+.salary-editor {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.salary-current {
+    flex: 0 0 auto;
+}
+
+.salary-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    flex: 1 1 320px;
+}
+
+.salary-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    flex: 1 1 auto;
+}
+
 /* Filtros da auditoria */
 
 .filters {

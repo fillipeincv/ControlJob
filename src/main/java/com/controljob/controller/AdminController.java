@@ -6,6 +6,7 @@ import com.controljob.model.SituacaoConserto;
 import com.controljob.model.TipoConserto;
 import com.controljob.service.AuditoriaService;
 import com.controljob.service.EstatisticaService;
+import com.controljob.service.SalarioConfigService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -26,10 +29,16 @@ public class AdminController {
 
     private final EstatisticaService estatisticaService;
     private final AuditoriaService auditoriaService;
+    private final SalarioConfigService salarioConfigService;
 
-    public AdminController(EstatisticaService estatisticaService, AuditoriaService auditoriaService) {
+    public AdminController(
+            EstatisticaService estatisticaService,
+            AuditoriaService auditoriaService,
+            SalarioConfigService salarioConfigService
+    ) {
         this.estatisticaService = estatisticaService;
         this.auditoriaService = auditoriaService;
+        this.salarioConfigService = salarioConfigService;
     }
 
     @GetMapping("/admin")
@@ -45,10 +54,23 @@ public class AdminController {
         }
 
         model.addAttribute("painel", estatisticaService.gerarPainel(de, ate));
+        model.addAttribute("salarioFixo", salarioConfigService.salarioAtual());
         model.addAttribute("de", de);
         model.addAttribute("ate", ate);
         model.addAttribute("pagina", "painel");
         return "admin/painel";
+    }
+
+    @PostMapping("/admin/salario")
+    public String atualizarSalario(@RequestParam BigDecimal valor, RedirectAttributes redirect) {
+        try {
+            BigDecimal novo = salarioConfigService.atualizar(valor);
+            redirect.addFlashAttribute("mensagem",
+                    "Salário fixo atualizado para R$ " + novo.toPlainString() + ".");
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("mensagem", "Não foi possível atualizar: " + e.getMessage());
+        }
+        return "redirect:/admin";
     }
 
     @GetMapping("/admin/auditoria")

@@ -13,9 +13,11 @@ import java.util.List;
 public class RelatorioService {
 
     private final ConsertoRepository repository;
+    private final SalarioConfigService salarioConfigService;
 
-    public RelatorioService(ConsertoRepository repository) {
+    public RelatorioService(ConsertoRepository repository, SalarioConfigService salarioConfigService) {
         this.repository = repository;
+        this.salarioConfigService = salarioConfigService;
     }
 
     @Transactional(readOnly = true)
@@ -30,7 +32,7 @@ public class RelatorioService {
                 .multiply(TipoConserto.CONSERTO_PARA_LOJISTAS.getPercentualComissao());
 
         BigDecimal totalComissao = comissaoGerais.add(comissaoPlaca).add(comissaoLojistas);
-        BigDecimal salarioFixo = new BigDecimal("1500.00");
+        BigDecimal salarioFixo = salarioConfigService.salarioAtual();
         BigDecimal salarioTotal = salarioFixo.add(totalComissao);
 
         return new RelatorioData(

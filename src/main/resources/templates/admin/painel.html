@@ -55,6 +55,27 @@
         <a th:href="@{/admin/auditoria}">Auditoria</a>
     </nav>
 
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Salário fixo</h2>
+            <span class="muted" style="font-size: 0.85rem;">Aplicado ao dashboard e ao próximo fechamento</span>
+        </div>
+        <div class="salary-editor">
+            <div class="salary-current">
+                <span class="metric-label">Valor atual</span>
+                <strong class="metric-value"
+                        th:text="'R$ ' + ${#numbers.formatDecimal(salarioFixo, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            </div>
+            <form method="post" th:action="@{/admin/salario}" class="salary-form">
+                <label>
+                    Novo valor (R$)
+                    <input type="number" name="valor" step="0.01" min="0.01" required th:value="${salarioFixo}">
+                </label>
+                <button type="submit" class="btn btn-primary">Atualizar salário</button>
+            </form>
+        </div>
+    </section>
+
     <div class="chips" style="margin-bottom: 1.25rem;">
         <span class="chip" th:text="'Período: ' + ${painel.periodoRotulo}">Período: —</span>
         <span class="chip" th:if="${de != null and ate != null}"

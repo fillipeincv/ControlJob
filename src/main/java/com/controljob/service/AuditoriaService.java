@@ -6,7 +6,6 @@ import com.controljob.model.Conserto;
 import com.controljob.model.SituacaoConserto;
 import com.controljob.repository.ConsertoRepository;
 import com.controljob.repository.ConsertoSpecifications;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,14 +30,14 @@ public class AuditoriaService {
     private static final String BOM = "﻿";
 
     private final ConsertoRepository repository;
-    private final BigDecimal salarioFixo;
+    private final SalarioConfigService salarioConfigService;
 
     public AuditoriaService(
             ConsertoRepository repository,
-            @Value("${controljob.salario-fixo:1500.00}") BigDecimal salarioFixo
+            SalarioConfigService salarioConfigService
     ) {
         this.repository = repository;
-        this.salarioFixo = salarioFixo;
+        this.salarioConfigService = salarioConfigService;
     }
 
     @Transactional(readOnly = true)
@@ -77,7 +76,7 @@ public class AuditoriaService {
                 escala(menor),
                 quantidade,
                 pendentes,
-                escala(salarioFixo.add(comissaoTotal)),
+                escala(salarioConfigService.salarioAtual().add(comissaoTotal)),
                 agrupamento,
                 agrupar(consertos, agrupamento),
                 repository.listarModelos()

@@ -4,7 +4,6 @@ import com.controljob.model.Conserto;
 import com.controljob.model.DashboardResumo;
 import com.controljob.model.TipoConserto;
 import com.controljob.repository.ConsertoRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,14 +15,14 @@ import java.util.List;
 public class ConsertoService {
 
     private final ConsertoRepository repository;
-    private final BigDecimal salarioFixo;
+    private final SalarioConfigService salarioConfigService;
 
     public ConsertoService(
             ConsertoRepository repository,
-            @Value("${controljob.salario-fixo:1500.00}") BigDecimal salarioFixo
+            SalarioConfigService salarioConfigService
     ) {
         this.repository = repository;
-        this.salarioFixo = salarioFixo;
+        this.salarioConfigService = salarioConfigService;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +75,7 @@ public class ConsertoService {
         }
 
         BigDecimal totalComissao = comissaoGerais.add(comissaoPlaca).add(comissaoLojistas);
+        BigDecimal salarioFixo = salarioConfigService.salarioAtual();
         BigDecimal salarioTotal = salarioFixo.add(totalComissao);
 
         return new DashboardResumo(
@@ -91,7 +91,7 @@ public class ConsertoService {
     }
 
     public BigDecimal getSalarioFixo() {
-        return salarioFixo;
+        return salarioConfigService.salarioAtual();
     }
 
     private BigDecimal scale(BigDecimal value) {

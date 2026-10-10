@@ -390,6 +390,60 @@ JORNADA PRINCIPAL CONCLUÍDA
 [█████████████████████████████████████████] 100%  — da planilha ao deploy
 ```
 
+### Fase 9 — Salário fixo editável (atualização pós-lançamento)
+
+Depois que o sistema já estava rodando, surgiu uma necessidade do mundo real: **o
+salário fixo pode aumentar de um mês para o outro.** Reajustes acontecem por
+força de mudanças externas — reajuste do salário mínimo, alterações na legislação
+trabalhista, decisão do empregador — e o valor precisa acompanhar isso sem virar
+um parto técnico.
+
+**Como era antes.** O salário vivia na configuração (`controljob.salario-fixo`),
+lida só na inicialização. Para mudá-lo era preciso editar o `.env` e **reiniciar a
+aplicação** — algo inviável para quem só quer ajustar um número. Pior: o
+`RelatorioService` tinha o valor **chumbado no código**, então nem a variável o
+afetava.
+
+**Como ficou.** O valor agora é **persistido no banco de dados** e editável por um
+botão na área do administrador:
+
+1. Uma entidade `SalarioConfig` guarda um único registro (a configuração vigente).
+2. O `SalarioConfigService` resolve o valor atual; se ainda não existir registro,
+   ele **semeia** o primeiro com o valor da variável de ambiente/histórico.
+3. Um serviço de atualização valida (precisa ser maior que zero) e grava — **só
+   muda de novo se o administrador mudar**.
+4. Todos os pontos que dependem do salário (dashboard, relatório, auditoria e
+   fechamento mensal) passaram a consultar **a mesma fonte**, eliminando o valor
+   duplicado.
+5. Na tela `Admin → Salário fixo`, há o valor atual, um campo para o novo valor e
+   o botão de atualizar.
+
+**Por que uma linha única e não um histórico de vigências?** Porque o pedido era
+simples e direto: um valor vigente que o administrador controla. O histórico dos
+meses passados **não se perde**: cada fechamento mensal já grava o salário usado
+no momento no **JSON de auditoria e no PDF**, que ficam arquivados. Ou seja, o
+"recibo" daquele mês fica congelado com o valor da época, mesmo que o parâmetro
+mude depois. Se no futuro for necessário recalcular meses antigos por vigência,
+`SalarioConfig` é o ponto de extensão natural.
+
+**Impacto da atualização:**
+
+- **Dashboard** e **próximo fechamento**: passam a usar o valor novo.
+- **Relatórios já gerados** (PDF/JSON): permanecem com o valor que valia quando
+  foram emitidos.
+- **Relatório de pagamentos** (`/relatorio`): deixou de ter valor chumbado e agora
+  reflete o valor vigente.
+- **Reset**: se a base for zerada, o valor volta ao padrão definido na subida.
+
+**Validação:** boot da aplicação confirmado (contexto Spring sobe e a tabela é
+criada pelo `ddl-auto`); a verificação funcional do fluxo (trocar o valor e ver o
+dashboard/fechamento refletirem) é manual, como no restante do projeto.
+
+```
+PATCH APLICADO
+[██████████████████████████████████████████] v1.1 — salário agora vive no banco
+```
+
 ---
 
 ## 6. O método: como a IA foi usada (e como não foi)
@@ -438,6 +492,7 @@ foi protagonista técnica. A divisão real do trabalho:
 | DTOs como records | imutabilidade e clareza | mais uma classe por visão |
 | Specifications | filtros combináveis e legíveis | curva de aprendizado inicial |
 | Segredos em `.env` | nada sensível no repositório | exige configuração no deploy |
+| Salário fixo no banco, com um valor vigente | ajuste sem redeploy, um clique no admin | sem histórico de vigências (o histórico fica nos PDF/JSON de cada fechamento) |
 
 Todos os trade-offs foram escolhas conscientes para o contexto real: uma oficina,
 poucos usuários, prioridade em simplicidade e confiabilidade.
@@ -488,6 +543,7 @@ Conquistas desbloqueadas:
   + Login com perfis de acesso
   + Fechamento agendado no último dia do mês
   + Deploy em Docker
+  + Salário fixo editável no painel do administrador (salvo no banco)
 ```
 
 **Validação:** a verificação foi **manual** — rodando a aplicação, criando

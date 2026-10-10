@@ -52,7 +52,7 @@ public class FechamentoMesService {
     private final ConsertoRepository repository;
     private final JavaMailSender mailSender;
     private final ObjectMapper objectMapper;
-    private final BigDecimal salarioFixo;
+    private final SalarioConfigService salarioConfigService;
     private final String diretorioAuditoria;
     private final String emailRemetente;
     private final List<String> emailDestinatarios;
@@ -62,7 +62,7 @@ public class FechamentoMesService {
             ConsertoRepository repository,
             JavaMailSender mailSender,
             ObjectMapper objectMapper,
-            @Value("${controljob.salario-fixo:1500.00}") BigDecimal salarioFixo,
+            SalarioConfigService salarioConfigService,
             @Value("${controljob.auditoria.diretorio:./data/auditoria}") String diretorioAuditoria,
             @Value("${controljob.email.remetente:}") String emailRemetente,
             @Value("${controljob.email.destinatario:}") String emailDestinatario,
@@ -71,7 +71,7 @@ public class FechamentoMesService {
         this.repository = repository;
         this.mailSender = mailSender;
         this.objectMapper = objectMapper;
-        this.salarioFixo = salarioFixo;
+        this.salarioConfigService = salarioConfigService;
         this.diretorioAuditoria = diretorioAuditoria;
         this.emailRemetente = emailRemetente;
         this.emailDestinatarios = Arrays.stream(emailDestinatario.split(","))
@@ -109,6 +109,7 @@ public class FechamentoMesService {
             }
         }
         BigDecimal totalComissao = comissaoGerais.add(comissaoPlaca).add(comissaoLojistas);
+        BigDecimal salarioFixo = salarioConfigService.salarioAtual();
         BigDecimal salarioTotal = salarioFixo.add(totalComissao);
 
         String nomeMes = mes.getMonth().getDisplayName(TextStyle.FULL, new Locale("pt", "BR"));
@@ -125,7 +126,7 @@ public class FechamentoMesService {
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(arquivoJson, montarAuditoria(
                     agora, mesLabel, consertos, valorTotal, comissaoGerais, comissaoPlaca,
-                    comissaoLojistas, totalComissao, salarioTotal));
+                    comissaoLojistas, totalComissao, salarioFixo, salarioTotal));
 
             gerarPdf(arquivoPdf, mesLabel, agora, consertos, valorTotal, totalComissao, salarioTotal);
         } catch (Exception e) {
@@ -147,7 +148,7 @@ public class FechamentoMesService {
     private Map<String, Object> montarAuditoria(
             ZonedDateTime agora, String mesLabel, List<Conserto> consertos,
             BigDecimal valorTotal, BigDecimal comissaoGerais, BigDecimal comissaoPlaca,
-            BigDecimal comissaoLojistas, BigDecimal totalComissao, BigDecimal salarioTotal
+            BigDecimal comissaoLojistas, BigDecimal totalComissao, BigDecimal salarioFixo, BigDecimal salarioTotal
     ) {
         Map<String, Object> auditoria = new LinkedHashMap<>();
         auditoria.put("mes", mesLabel);
