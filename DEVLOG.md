@@ -1,10 +1,28 @@
-# ControlJob — o devlog de uma jornada assistida por IA
+# ControlJob — devlog completo: do problema ao deploy, com IA como co-piloto
 
-> Este documento conta, em formato de "walkthrough" gamificado, como o ControlJob
-> saiu de uma planilha mental para uma aplicação web completa. Ele é honesto sobre
-> o processo: as decisões de produto e as validações foram humanas, e boa parte do
-> código foi escrita com assistência de inteligência artificial, revisada e testada
-> passo a passo.
+> Este documento descreve **todo o processo de desenvolvimento** do ControlJob:
+> por que ele existe, como o domínio foi modelado, qual arquitetura foi escolhida
+> e por quê, e como cada parte foi construída com assistência de inteligência
+> artificial — sempre com decisões de produto, revisão e validação humanas.
+>
+> É um registro honesto. Onde não havia teste automatizado, está dito. Onde a IA
+> errou ou precisou de ajuste, está dito. O objetivo é mostrar o método, não vender
+> mágica. Nada aqui contém dados reais, credenciais ou informações sensíveis.
+
+## Índice
+
+1. [O problema](#1-o-problema)
+2. [Levantamento de requisitos](#2-levantamento-de-requisitos)
+3. [Modelagem do domínio](#3-modelagem-do-domínio)
+4. [Arquitetura escolhida e por quê](#4-arquitetura-escolhida-e-por-quê)
+5. [O processo de desenvolvimento, fase a fase](#5-o-processo-de-desenvolvimento-fase-a-fase)
+6. [O método: como a IA foi usada (e como não foi)](#6-o-método-como-a-ia-foi-usada-e-como-não-foi)
+7. [Decisões, trade-offs e o que envelheceu bem](#7-decisões-trade-offs-e-o-que-envelheceu-bem)
+8. [Segurança e privacidade](#8-segurança-e-privacidade)
+9. [Empacotamento e publicação](#9-empacotamento-e-publicação)
+10. [Resultado final](#10-resultado-final)
+11. [Como rodar](#11-como-rodar)
+12. [Próximos níveis (roadmap)](#12-próximos-níveis-roadmap)
 
 ```
 INÍCIO DA JORNADA
@@ -13,228 +31,359 @@ INÍCIO DA JORNADA
 
 ---
 
-## Nível 0 — A missão
+## 1. O problema
 
-Quem trabalha com conserto de eletrônicos conhece bem a rotina: entra aparelho,
-sai aparelho, e cada serviço tem um valor, um tipo e uma regra de comissão
-diferente. No fim do mês, a pergunta crucial aparece:
+### O dia a dia
+
+Quem trabalha com conserto de eletrônicos vive uma rotina repetitiva e cheia de
+detalhes: entra aparelho, sai aparelho. Cada serviço tem um valor, um tipo e uma
+regra de comissão diferente. No fim do mês, aparece a pergunta decisiva:
 
 **"Quanto eu tenho a receber, e de onde veio cada centavo?"**
 
-O jeito antigo era anotar conserto por conserto e, na hora do fechamento,
-recalcular tudo na mão — misturando três taxas de comissão diferentes, um salário
-fixo e a sensação constante de que algum item tinha escapado.
+O método antigo era anotar conserto por conserto e, na hora do fechamento,
+recalcular tudo à mão — misturando três taxas de comissão, um salário fixo e a
+sensação constante de que algum item tinha escapado. Erro de digitação, item
+esquecido e retrabalho eram o padrão.
 
-O ControlJob nasceu para resolver exatamente isso: um lugar único onde cada
-conserto é registrado, a comissão é calculada sozinha, e o fechamento do mês vira
-um arquivo — não um cálculo de cabeça.
+### As regras de negócio
 
-### As regras do jogo (requisitos reais)
-
-| Regra | Valor / comportamento |
+| Tipo de conserto | Comissão |
 | --- | --- |
-| Consertos em Geral | comissão de **5%** |
-| Reparo de Placa | comissão de **50%** |
-| Conserto para Lojistas | comissão de **50%** |
-| Salário | **fixo mensal + total de comissões** |
-| Fechamento | congela os itens pendentes, gera relatório e envia por e-mail |
-| Acesso | um administrador edita; leitores só consultam |
+| Consertos em Geral | **5%** |
+| Reparo de Placa | **50%** |
+| Conserto para Lojistas | **50%** |
 
-O placar final que o sistema precisa mostrar, a qualquer momento:
+O placar que o sistema precisa calcular a qualquer momento:
 
 ```
 salário_total = salário_fixo + Σ comissão(conserto)
 ```
 
+### O que precisava existir
+
+- Registrar consertos com modelo, número da OS, IMEI (opcional), tipo, descrição,
+  valor e data.
+- Calcular a comissão automaticamente, sem ninguém digitar percentual.
+- Mostrar, em tempo real, o total de consertos, a comissão acumulada e o salário.
+- "Fechar o mês": arquivar os consertos pendentes e gerar um **relatório**.
+- Separar o que é conserto de lojista numa visão dedicada.
+- Impedir acesso indevido — nem todo mundo deve poder editar.
+- Rodar de forma simples, local, sem depender de serviços na nuvem.
+
+```
+CHECKPOINT
+[██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 5%   — problema definido
+```
+
 ---
 
-## Nível 1 — Escolhendo o "engine" (a arquitetura)
+## 2. Levantamento de requisitos
 
-Antes da primeira linha de código, a pergunta de arquitetura: **que tipo de
-sistema isso é?**
+Antes de qualquer código, o domínio foi interrogado. As perguntas não foram
+"qual framework usar?", mas "como o trabalho realmente funciona?". Algumas das
+que guiaram tudo:
 
-A resposta honesta: é uma aplicação interna, para poucas pessoas, rodando em uma
-oficina, sem necessidade de escalar para milhares de usuários simultâneos. Isso
-muda tudo. Em vez de desenhar algo grande e complicado, o projeto foi feito para
-ser **simples de operar e fácil de entender**.
+- **A comissão é sempre a mesma?** Não — depende do tipo (5%, 50%, 50%).
+- **O que entra no salário?** Um valor fixo mensal somado às comissões.
+- **O que significa "fechar o mês"?** Congelar os itens pendentes, gerar um
+  relatório e enviá-lo. Depois disso, o item não deve contar de novo.
+- **Como saber se um conserto já foi pago?** Por um marcador de "fechado".
+- **Quem usa o sistema?** Um administrador que edita e outros que só consultam.
+- **Precisa internet?** Não — os dados ficam na máquina, privados.
+- **Como enviar o relatório?** Por e-mail, com um PDF e um arquivo de auditoria.
 
-### Por que Spring Boot (monólito, MVC server-side)?
-
-- **Um único artefato para rodar.** `./mvnw spring-boot:run` em desenvolvimento,
-  um `.jar` em produção. Sem orquestrar vários serviços.
-- **Thymeleaf + HTML no servidor.** Não existe um segundo projeto de frontend
-  (Node, bundler, build separado). Um só lugar para manter. Para um painel
-  interno, essa simplicidade vale mais que qualquer framework de UI.
-- **Microserviços aqui seriam over-engineering.** Um sistema desse porte ganha
-  mais com fronteiras claras dentro de um único processo do que com rede e
-  coordenação entre processos.
-
-### Por que o banco H2 em arquivo?
-
-- É **embutido**: não exige instalar e administrar um servidor de banco. Os dados
-  ficam em `./data/controljob.mv.db`, persistindo entre reinícios.
-- **Backup é copiar uma pasta.** No cenário de oficina, isso é ouro.
-- O contrato com o código é JPA/Hibernate, então migrar para PostgreSQL no futuro
-  é trocar configuração de datasource, não reescrever as entidades.
-- O trade-off é real e assumido: H2 em arquivo brilha para uso de instância única
-  e não é a escolha ideal para múltiplas instâncias concorrentes. Para o problema
-  em questão, foi a decisão certa.
-
-### Por que as regras de dinheiro vivem no domínio?
-
-Comissão é regra de negócio, não detalhe de tela. Por isso ela mora no enum
-`TipoConserto` — fonte única de verdade — e o cálculo é delegado pela própria
-entidade `Conserto`:
+Esse questionário virou a espinha dorsal do modelo de dados e das telas.
 
 ```
-Conserto.getComissao()  →  TipoConserto.calcularComissao(valor)
+CHECKPOINT
+[████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 10%  — requisitos claros
 ```
 
-Assim, o dashboard, o relatório, a auditoria e o fechamento **nunca** reimplementam
-a conta: todos perguntam a mesma fonte. E o dinheiro usa `BigDecimal` do começo ao
-fim, porque `double` não se dá bem com centavos.
+---
 
-### O "estado" de um conserto
+## 3. Modelagem do domínio
 
-A vida de um conserto é binária e cabe em uma coluna: `dataFechamento`.
+Aqui a IA ajudou a transformar as respostas em classes, mas cada nome e cada
+campo foi escolhido pensando no vocabulário real do trabalho.
+
+### Entidades
+
+- **`Conserto`** — o coração. Guarda modelo, OS, IMEI, tipo, descrição, valor,
+  data e `dataFechamento`.
+- **`Usuario`** — nome de usuário, hash da senha e perfil.
+
+### Enums de regra
+
+- **`TipoConserto`** — Consertos em Geral, Reparo de Placa, Conserto para
+  Lojistas. Cada um carrega seu percentual de comissão.
+- **`PerfilUsuario`** — `ADMIN` ou `LEITOR`.
+- **`SituacaoConserto`** — Todos, Pendentes, Fechados (para filtros).
+- **`Agrupamento`** — como agrupar a auditoria (mês, tipo, modelo, situação).
+
+### A decisão central: comissão no domínio
+
+Em vez de espalhar "0.05" e "0.50" pelas telas, a regra mora no enum — **fonte
+única de verdade**:
+
+```java
+public enum TipoConserto {
+    CONSERTOS_EM_GERAL("Consertos em Geral", new BigDecimal("0.05")),
+    REPARO_DE_PLACA("Reparo de Placa",      new BigDecimal("0.50")),
+    CONSERTO_PARA_LOJISTAS("Conserto para Lojistas", new BigDecimal("0.50"));
+    // ...
+}
+```
+
+E a entidade apenas delega:
+
+```java
+public BigDecimal getComissao() {
+    if (tipoConserto == null || valor == null) return BigDecimal.ZERO;
+    return tipoConserto.calcularComissao(valor);
+}
+```
+
+Assim, dashboard, relatório, auditoria e fechamento **nunca** reimplementam a
+conta. Mudar uma taxa no futuro é editar uma linha.
+
+### O estado de um conserto
+
+A vida de um conserto cabe em uma coluna: `dataFechamento`.
 
 - `null` → **pendente** (ainda entra no salário do mês)
 - preenchida → **fechado** (arquivado, não conta de novo)
 
-Esse único campo é a máquina de estados que impede o clássico bug de "paguei duas
+Esse único campo é a máquina de estados que evita o bug clássico de "paguei duas
 vezes pelo mesmo conserto".
 
-### Mapa do mundo (organização em camadas)
+### Dinheiro nunca é `double`
+
+Todos os valores usam `BigDecimal`, com escala 2 e `RoundingMode.HALF_UP` nas
+saídas. Centavos não se perdem no caminho.
+
+```
+CHECKPOINT
+[██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 16%  — domínio modelado
+```
+
+---
+
+## 4. Arquitetura escolhida e por quê
+
+A pergunta certa não era "qual a arquitetura mais avançada?", e sim "que
+arquitetura serve a este problema sem virar peso morto?".
+
+### Por que Spring Boot (monólito, MVC server-side)?
+
+- **Um único artefato.** `./mvnw spring-boot:run` em desenvolvimento, um `.jar`
+  em produção. Nada de orquestrar vários serviços.
+- **Thymeleaf + HTML renderizado no servidor.** Não existe um segundo projeto de
+  frontend (Node, bundler, build separado). Um só lugar para manter.
+- **Microserviços seriam over-engineering aqui.** Um sistema para uma oficina
+  ganha mais com fronteiras claras dentro de um processo do que com rede e
+  coordenação entre serviços.
+
+### Por que o banco H2 em arquivo?
+
+- **Embutido**: não exige instalar e administrar servidor de banco.
+- **Backup é copiar uma pasta** (`./data`). No cenário de oficina, isso vale ouro.
+- O contrato é **JPA/Hibernate**, então migrar para PostgreSQL no futuro é trocar
+  a configuração de datasource, não reescrever as entidades.
+- **Trade-off assumido**: H2 em arquivo brilha para uso de instância única e não
+  é a escolha ideal para múltiplas instâncias concorrentes. Para o problema em
+  questão, foi a decisão certa.
+
+### Organização em camadas
 
 ```
 src/main/java/com/controljob
 ├── model/        entidades JPA, enums de regra e "records" de leitura
 ├── repository/   Spring Data JPA + Specifications para filtros dinâmicos
-├── service/      onde a regra de negócio acontece (comissão, fechamento, auditoria)
-├── controller/   a camada web (MVC) que conversa com o navegador
-├── job/          tarefas agendadas (o fechamento automático)
+├── service/      regra de negócio (comissão, fechamento, auditoria, estatística)
+├── controller/   camada web (MVC) que conversa com o navegador
+├── job/          tarefas agendadas (fechamento automático)
 └── config/       segurança e login
 ```
 
 Cada camada faz uma coisa: controller lida com HTTP, service decide, repository
-persiste, model representa. Isso mantém o projeto navegável mesmo meses depois.
+persiste, model representa. Isso mantém o projeto navegável meses depois.
+
+### DTOs imutáveis
+
+Os dados que vão para a tela não são entidades: são **records** (`DashboardResumo`,
+`PainelAnalitico`, `Auditoria`). Imutáveis, focados no que a tela precisa, sem
+risco de alterar o banco por acidente.
 
 ```
 CHECKPOINT
-[█████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 12%   — engine escolhida
+[████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 22%  — arquitetura definida
 ```
 
 ---
 
-## Nível 2 — As fases da construção
+## 5. O processo de desenvolvimento, fase a fase
 
-Cada fase abaixo é uma peça real e verificável no repositório.
+Cada fase abaixo virou código real e verificável no repositório. O padrão de
+trabalho foi sempre o mesmo ciclo: **requisito → desenho com IA → código →
+revisão humana → validação rodando a aplicação**.
 
-### Fase 2.1 — O núcleo: registrar consertos
+### Fase 0 — Setup
 
-- Entidade `Conserto`: modelo do aparelho, número da OS, IMEI opcional, tipo,
-  descrição, valor, data e `dataFechamento`.
-- Validação com Bean Validation direto na entidade (valor > 0, campos
-  obrigatórios) — o formulário nunca grava lixo no banco.
-- CRUD completo com `ConsertoController` e um formulário Thymeleaf único que
-  serve para criar e editar.
-- Página dedicada `/lojistas` filtrando só os consertos para lojistas.
+- Projeto gerado como Spring Boot (Java 21), com as dependências escolhidas a
+  dedo: `web`, `thymeleaf`, `data-jpa`, `validation`, `security`,
+  `thymeleaf-extras-springsecurity6`, `mail`, H2 e OpenPDF.
+- Maven Wrapper incluído para rodar sem instalar Maven na máquina.
 
-> Confronto desta fase: garantir que IMEI em branco virasse `null` e não uma
-> string vazia que poluiria as estatísticas de recorrência depois. Resolvido no
-> `ConsertoService.salvar`.
+**Arquivos:** `pom.xml`, `mvnw`, `mvnw.cmd`.
 
-### Fase 2.2 — O painel de bordo (dashboard)
+### Fase 1 — Domínio e registro de consertos
 
-O `ConsertoService.gerarResumo()` caminha pela lista de consertos pendentes e
-monta um `DashboardResumo` com:
+- Entidade `Conserto` com validação embutida (Bean Validation): valor maior que
+  zero, campos obrigatórios.
+- Formulário Thymeleaf único servindo para criar e editar.
+- `ConsertoController` + `ConsertoService` para o CRUD.
 
-- valor total dos consertos,
-- total de comissão (separado por tipo),
-- salário fixo,
-- **salário total** (fixo + comissões),
-- quantidade de consertos.
+**Confronto desta fase:** garantir que IMEI em branco virasse `null`, e não uma
+string vazia que depois poluiria as estatísticas de recorrência. Resolvido no
+`ConsertoService.salvar`.
 
-As somas também existem em consultas JPQL no repositório
-(`somarValorTotal`, `somarValorPorTipo`), então o banco pode fazer o trabalho
-pesado quando convém.
+**Arquivos:** `model/Conserto.java`, `service/ConsertoService.java`,
+`controller/ConsertoController.java`, `templates/conserto-form.html`.
 
-> Decisão de leitura: os "records" (`DashboardResumo`, `PainelAnalitico`,
-> `Auditoria`) são imutáveis e existem só para transportar dados à tela — não são
-> entidades e não vão para o banco.
+### Fase 2 — Cálculo de comissão e dashboard
 
-### Fase 2.3 — CHEFÃO: o fechamento do mês
+- `ConsertoService.gerarResumo()` percorre os pendentes e monta o
+  `DashboardResumo`: valor total, comissão por tipo, salário fixo, salário total
+  e quantidade.
+- Somatórios também disponíveis em JPQL no repositório (`somarValorTotal`,
+  `somarValorPorTipo`).
 
-Este é o boss da jornada. No último dia do mês, ou por um botão no painel, o
-sistema precisa "fechar" tudo o que está pendente:
+**Decisão:** o dashboard lê de um DTO imutável, não da entidade. A tela não
+manipula o estado do banco.
 
-1. Buscar os consertos pendentes até o fim do mês (`FechamentoMesService`).
-2. Somar valores e comissões por tipo.
-3. Gerar dois artefatos:
+**Arquivos:** `model/DashboardResumo.java`,
+`repository/ConsertoRepository.java`, `templates/dashboard.html`.
+
+### Fase 3 — Visões dedicadas
+
+- **`/lojistas`**: filtra só os consertos para lojistas (maior comissão, precisa
+  de atenção própria).
+- **`/relatorio`**: relatório de pagamentos do mês corrente.
+
+**Arquivos:** `service/RelatorioService.java`,
+`controller/RelatorioController.java`, `templates/lojistas.html`,
+`templates/relatorio.html`.
+
+### Fase 4 — CHEFÃO: o fechamento do mês
+
+O boss da jornada. No fim do mês, ou por um botão, o sistema:
+
+1. Busca os consertos pendentes até o fim do mês (`FechamentoMesService`).
+2. Soma valores e comissões por tipo.
+3. Gera dois artefatos:
    - **JSON de auditoria** do mês (com tudo detalhado),
    - **PDF do relatório** de pagamentos (tabela completa, via OpenPDF).
-4. Anexar os dois arquivos e **enviar por e-mail** (JavaMail / SMTP).
-5. Marcar os consertos como fechados (`marcarFechados`), congelando o mês.
+4. Anexa os dois arquivos e **envia por e-mail** (JavaMail / SMTP).
+5. Marca os consertos como fechados (`marcarFechados`), congelando o mês.
 
-Se o e-mail falhar, o fechamento **não** desanda: os arquivos continuam gerados e
-o erro é registrado de forma clara. Isso transforma um cálculo confuso de fim de
-mês em um pacote rastreável.
+**Decisão de robustez:** se o e-mail falhar, o fechamento **não** desanda — os
+arquivos continuam gerados e o erro é registrado de forma clara. Um cálculo
+confuso de fim de mês vira um pacote rastreável.
+
+**Arquivos:** `service/FechamentoMesService.java`,
+`controller/FechamentoMesController.java`, `templates/admin/painel.html`.
 
 ```
 BOSS DEFEATED
-[████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 30%   — o mês agora tem recibo
+[██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░] 40%  — o mês agora tem recibo
 ```
 
-### Fase 2.4 — A sala de troféus: painel analítico e auditoria
+### Fase 5 — Segurança e perfis
 
-Registrar conserto é o básico. **Entender** o padrão é o que a IA e os dados
-permitem de bônus. O `EstatisticaService` monta um `PainelAnalitico` com:
-
-- **Evolução mensal** (quantidade, valor, comissão e ticket médio por mês),
-- **Distribuição por tipo** (donut desenhado em SVG puro, calculando
-  `stroke-dasharray` na mão a partir da circunferência),
-- **Top modelos de aparelho**,
-- **Recorrências por IMEI**: o mesmo aparelho voltando mais de uma vez, com
-  intervalo de dias e valor acumulado.
-
-Na área administrativa, o `AuditoriaService` leva isso além: filtros por período,
-tipo, modelo, texto livre, faixa de valor e situação — montados dinamicamente com
-**JPA Specifications** — além de agrupamentos (por mês, tipo, modelo, situação) e
-**exportação CSV**.
-
-> Por que Specifications? Porque os filtros são combináveis e opcionais. Em vez de
-> dezenas de métodos `findByXAndYAndZ`, cada critério é uma peça que se junta só
-> quando existe. É código que se lê como a pergunta que ele responde.
-
-### Fase 2.5 — As muralhas: segurança e perfis
-
-A aplicação não guarda senhas em texto e não tem credencial "chumbada" no código:
+Nada de credencial "chumbada" no código nem senha em texto:
 
 - **Primeiro acesso** cria o administrador pela tela `/configurar-admin` (só
   aparece enquanto não existe usuário). Do contrário, a senha inicial seria uma
   vulnerabilidade embutida no projeto.
 - Senhas com **BCrypt** (`PasswordEncoder`).
 - Dois perfis: `ADMIN` (edita, exclui, fecha o mês, vê auditoria) e `LEITOR`
-  (consulta). Regras de acesso declaradas no `SecurityConfig`.
-- Login por formulário e logout configurados; visitas a qualquer rota protegida
-  caem no login.
+  (consulta), com regras declaradas no `SecurityConfig`:
 
-### Fase 2.6 — Os guardiões automáticos: agendamento
+```java
+.requestMatchers("/usuarios/**", "/admin/**", "/consertos/novo",
+                 "/consertos/*/editar", "/consertos/*/excluir").hasRole("ADMIN")
+.requestMatchers("/consertos").hasRole("ADMIN")
+.anyRequest().authenticated()
+```
 
-`FechamentoMesJob` usa `@Scheduled(cron = "0 0 22 L * ?")` no fuso
-`America/Sao_Paulo`: **no último dia do mês, às 22h**, o fechamento roda sozinho.
-O mesmo serviço também pode ser disparado por um botão. A automação reaproveita
-100% da lógica já testada — não existe uma "versão do robô" diferente da "versão
-do humano".
+- Login por formulário, logout configurado, e redirecionamento automático para o
+  primeiro acesso quando ainda não há administrador.
 
-### Fase 2.7 — Portal de saída: empacotar e publicar
+**Arquivos:** `config/SecurityConfig.java`, `service/UsuarioService.java`,
+`controller/AuthController.java`, `controller/UsuarioController.java`.
+
+### Fase 6 — Os guardiões automáticos (agendamento)
+
+O fechamento não precisa ser lembrado: `FechamentoMesJob` roda sozinho no
+**último dia do mês, às 22h**, no fuso `America/Sao_Paulo`.
+
+```java
+@Scheduled(cron = "0 0 22 L * ?", zone = "America/Sao_Paulo")
+public void executar() { /* ... chama FechamentoMesService ... */ }
+```
+
+A automação reaproveita 100% da lógica já validada — não existe uma "versão do
+robô" diferente da "versão do humano".
+
+**Arquivos:** `job/FechamentoMesJob.java`, `ControlJobApplication.java`
+(`@EnableScheduling`).
+
+### Fase 7 — Sala de troféus: analytics e auditoria
+
+Registrar é o básico; **entender** o padrão é o bônus que os dados permitem.
+
+O `EstatisticaService` monta o `PainelAnalitico` com:
+
+- **Evolução mensal** (quantidade, valor, comissão e ticket médio por mês),
+- **Distribuição por tipo** (donut desenhado em SVG puro, com
+  `stroke-dasharray` calculado a partir da circunferência),
+- **Top modelos de aparelho**,
+- **Recorrências por IMEI**: o mesmo aparelho voltando mais de uma vez, com
+  intervalo em dias e valor acumulado.
+
+Na auditoria, filtros combináveis e agrupamentos:
+
+```java
+public static Specification<Conserto> noPeriodo(LocalDate de, LocalDate ate) { /* ... */ }
+public static Specification<Conserto> dosTipos(Collection<TipoConserto> tipos) { /* ... */ }
+public static Specification<Conserto> comTexto(String termo) { /* ... */ }
+// período + tipo + modelo + texto + faixa de valor + situação, tudo opcional
+```
+
+**Por que Specifications?** Porque os filtros são opcionais e combináveis. Em vez
+de dezenas de métodos `findByXAndYAndZ`, cada critério é uma peça que se junta só
+quando existe. Mais o **exportação CSV** da auditoria.
+
+**Arquivos:** `service/EstatisticaService.java`, `service/AuditoriaService.java`,
+`model/PainelAnalitico.java`, `model/Auditoria.java`,
+`repository/ConsertoSpecifications.java`, `templates/admin/*.html`.
+
+```
+CHECKPOINT
+[██████████████████████████░░░░░░░░░░░░░░] 70%  — sistema completo
+```
+
+### Fase 8 — Empacotamento e publicação
 
 - **Dockerfile** enxuto sobre `eclipse-temurin:21-jre`.
-- **docker-compose** montando o banco (`./data`) como volume e injetando segredos
-  por `.env`, nunca dentro da imagem.
+- **docker-compose** com o banco (`./data`) montado como volume e os segredos
+  entrando por `.env`, nunca dentro da imagem.
 - Segredos (SMTP, salário, usuário admin) chegam por **variáveis de ambiente**;
-  o `application.properties` só referencia nomes de variável, com valores
-  sensatos como padrão.
+  o `application.properties` só referencia nomes, com padrões sensatos.
+
+**Arquivos:** `Dockerfile`, `docker-compose.yml`, `.dockerignore`,
+`.env.example`.
 
 ```
 JORNADA PRINCIPAL CONCLUÍDA
@@ -243,87 +392,88 @@ JORNADA PRINCIPAL CONCLUÍDA
 
 ---
 
-## Inventário (o que o projeto usa e por quê)
-
-| Peça | Papel na jornada |
-| --- | --- |
-| Java 21 + Spring Boot 3.4 | base da aplicação; jar único |
-| Spring MVC + Thymeleaf | telas renderizadas no servidor, sem build de frontend |
-| Spring Data JPA + Hibernate | persistência; migrar de banco é trocar config |
-| JPA Specifications | filtros dinâmicos da auditoria |
-| Spring Security + BCrypt | login, papéis ADMIN/LEITOR, sem senha fraca embutida |
-| H2 (arquivo) | banco embutido, zero administração, backup por cópia |
-| OpenPDF | geração do relatório em PDF |
-| Spring Mail (JavaMail) | envio do fechamento mensal por e-mail |
-| Jackson | serialização do JSON de auditoria |
-| Bean Validation | integridade dos dados na entrada |
-| Spring Scheduling | fechamento automático no fim do mês |
-| Docker / Compose | empacotamento e execução isolada |
-
----
-
-## Como a IA entrou na party
+## 6. O método: como a IA foi usada (e como não foi)
 
 Seria desonesto dizer que "a IA fez tudo". Também seria desonesto esconder que ela
-foi protagonista técnica. A divisão real do trabalho foi mais ou menos assim:
+foi protagonista técnica. A divisão real do trabalho:
 
-- **Humano (produto e julgamento):** definiu o problema, as três faixas de
-  comissão, a regra de salário, o que é "fechar o mês", quem pode editar e o que
-  conta como dado sensível. Testou o fluxo, apontou o que não fazia sentido e
-  validou cada entrega.
-- **IA (execução técnica):** ajudou a desenhar as classes e os "records", escreveu
-  a maior parte do código e das consultas, sugeriu a estrutura em camadas, as
-  Specifications, a divisão por perfis e o desenho das telas — tudo isso revisado,
-  ajustado e testado antes de entrar.
-- **Humano + IA (iteração):** cada função foi lida, questionada e refinada. A IA
-  acelerou a escrita; o humano garantiu que o resultado correspondesse ao mundo
-  real da oficina.
+### O ciclo de cada tarefa
 
-Em outras palavras: a IA foi **parceira de implementação**, não a dona do
-problema. O valor do experimento foi mostrar que um único desenvolvedor, com
-assistência de IA, consegue levar uma aplicação de negócio completa — do domínio
-ao PDF enviado por e-mail e ao deploy em container — mantendo o código legível.
+1. **Requisito (humano).** Definir o comportamento esperado em linguagem de
+   negócio: "ao fechar o mês, os consertos pendentes devem deixar de contar".
+2. **Desenho (humano + IA).** Discutir onde a regra deveria morar, quais classes
+   surgiriam, quais eram os riscos.
+3. **Implementação (IA).** A IA redigiu a maior parte do código e das consultas.
+4. **Revisão (humano).** Ler, questionar, renomear, cortar excesso.
+5. **Validação (humano).** Rodar a aplicação, criar consertos de teste, conferir
+   os números na tela e no relatório.
 
----
+### O que a IA fez bem
 
-## Chefes enfrentados (e o que ficou de aprendizado)
+- Reduzir drasticamente o trabalho mecânico (getters/setters, queries, telas).
+- Sugerir estruturas coerentes (camadas, Specifications, records).
+- Manter consistência de estilo em todo o projeto.
 
-1. **Comissão espalhada pelo código.** Venceu-se centralizando a regra no enum e
-   delegando pela entidade.
-2. **Contar conserto duas vezes.** Resolvido com o estado `dataFechamento` e o
-   `marcarFechados` transacional.
-3. **Dinheiro com arredondamento errado.** `BigDecimal` com escala 2 e
-   `RoundingMode.HALF_UP` em todos os pontos de saída.
-4. **Filtro de auditoria "impossível".** Especificações componíveis em vez de
-   dezenas de métodos.
-5. **Segredo vazando para o repositório.** Credenciais fora do código, via `.env`,
-   com `.env.example` documentando o formato.
-6. **Falha de e-mail derrubando o fechamento.** Arquivos gerados primeiro, erro de
-   SMTP tratado à parte.
+### O que só o humano podia fazer
+
+- Decidir o que é "fechar o mês" no mundo real.
+- Perceber que a comissão tinha de viver no domínio, não na tela.
+- Garantir que a aplicação fizesse sentido para quem trabalha na oficina.
+- Proteger dados sensíveis e validar cada entrega.
+
+> Resumo: a IA foi **parceira de implementação**, não dona do problema. O
+> experimento mostra que um único desenvolvedor, com apoio de IA, leva uma
+> aplicação de negócio completa do domínio ao deploy — mantendo o código legível.
 
 ---
 
-## Como jogar
+## 7. Decisões, trade-offs e o que envelheceu bem
+
+| Decisão | Motivo | Trade-off assumido |
+| --- | --- | --- |
+| Monólito Spring Boot | simplicidade de operar e manter | menos "escala" horizontal (não é o problema aqui) |
+| H2 em arquivo | zero administração, backup por cópia | não ideal para múltiplas instâncias |
+| Comissão no enum | fonte única de verdade | taxa fixa no código (mudança = novo deploy) |
+| `dataFechamento` como estado | evita dupla contagem | um único campo binário (simples e suficiente) |
+| DTOs como records | imutabilidade e clareza | mais uma classe por visão |
+| Specifications | filtros combináveis e legíveis | curva de aprendizado inicial |
+| Segredos em `.env` | nada sensível no repositório | exige configuração no deploy |
+
+Todos os trade-offs foram escolhas conscientes para o contexto real: uma oficina,
+poucos usuários, prioridade em simplicidade e confiabilidade.
+
+---
+
+## 8. Segurança e privacidade
+
+- **Senhas com BCrypt**; nunca em texto no banco.
+- **Primeiro acesso guiado** cria o admin; nada de senha padrão no código.
+- **Perfis**: `ADMIN` edita; `LEITOR` apenas consulta.
+- **Segredos fora do código**: o `.env` é ignorado pelo `.gitignore`; existe um
+  `.env.example` documentando as chaves, sem valores reais.
+- **Versionamento limpo**: `data/`, `target/` e `.env` ficam fora do repositório.
+- Esta **versão pública** foi sanitizada: sem dados de consertos, comissões,
+  salários, e-mails ou credenciais reais.
+
+---
+
+## 9. Empacotamento e publicação
 
 ```bash
-# 1. Configure o ambiente
-cp .env.example .env          # preencha e-mail/SMTP, salário e usuário admin
+# build do jar
+./mvnw clean package
 
-# 2. Rode em desenvolvimento
-./mvnw spring-boot:run        # abra http://localhost:8080
-
-# 3. No primeiro acesso, defina a senha do administrador
-#    (a tela /configurar-admin aparece automaticamente)
-
-# 4. Ou empacote e suba com Docker
-docker compose up -d --build  # aplicação disponível na porta 8081
+# subir com Docker
+docker compose up -d --build
 ```
 
-Os dados ficam em `./data/controljob` (H2 em arquivo).
+A aplicação sobe em um container, com o banco persistido em volume. O mesmo
+`docker-compose.yml` serve de base para publicar em qualquer máquina com Docker,
+bastando preencher o `.env`.
 
 ---
 
-## Placar final
+## 10. Resultado final
 
 ```
 [█████████████████████████████████████████] Done
@@ -340,9 +490,53 @@ Conquistas desbloqueadas:
   + Deploy em Docker
 ```
 
-O ControlJob é prova de um jeito de construir software: menos digitação mecânica,
-mais pensamento sobre o problema — com a IA como co-piloto do desenvolvimento.
+**Validação:** a verificação foi **manual** — rodando a aplicação, criando
+consertos em todos os tipos, conferindo os totais do dashboard, disparando o
+fechamento e inspecionando o PDF, o JSON e o e-mail. Não há (ainda) suíte de
+testes automatizados; está no roadmap.
 
-> **Versão pública:** este repositório não contém dados reais de consertos,
-> comissões, salários, e-mails ou quaisquer credenciais. Os nomes de usuário e
-> valores padrão foram trocados por exemplos genéricos.
+---
+
+## 11. Como rodar
+
+```bash
+# 1. Configure o ambiente
+cp .env.example .env          # preencha e-mail/SMTP, salário e usuário admin
+                              # (sem .env, sobe com valores padrão e sem e-mail)
+
+# 2. Rode em desenvolvimento
+./mvnw spring-boot:run        # abra http://localhost:8080
+
+# 3. No primeiro acesso, defina a senha do administrador
+#    (a tela /configurar-admin aparece automaticamente)
+
+# 4. Ou empacote e suba com Docker
+docker compose up -d --build  # aplicação disponível na porta 8081
+```
+
+Os dados ficam em `./data/controljob` (H2 em arquivo).
+
+---
+
+## 12. Próximos níveis (roadmap)
+
+Ideias naturais, ainda **não** implementadas — listadas com transparência para
+quem quiser contribuir:
+
+- **Testes automatizados** (unitários para as regras de comissão e fechamento;
+  de integração para os repositórios e filtros).
+- **Migration de schema** com Flyway/Liquibase no lugar do `ddl-auto`.
+- **Banco relacional externo** (PostgreSQL) se o uso crescer.
+- **Troca de senha** e recuperação de acesso.
+- **Hospedagem atrás de HTTPS** com proxy reverso.
+
+---
+
+## Nota sobre esta versão pública
+
+Este repositório foi preparado para divulgar o trabalho de desenvolvimento
+assistido por IA. Ele **não** contém nenhum dado real de consertos, comissões,
+salários, e-mails ou credenciais. Usuário administrador e salário padrão são
+exemplos genéricos, e todos os segredos são fornecidos por variáveis de ambiente.
+
+Construído com Java, Spring Boot e muita conversa entre pessoa e máquina.
