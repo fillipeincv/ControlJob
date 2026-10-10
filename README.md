@@ -48,6 +48,14 @@ docker compose up -d --build
 
 A aplicação fica disponível na porta `8081`.
 
+## Segurança
+
+O projeto passou por uma revisão de segurança completa; as falhas críticas e
+altas já foram corrigidas (H2 console desligado e bloqueado, proteção contra
+força bruta com lockout + rate limit, bootstrap do admin via `CONTROLJOB_ADMIN_SENHA`
+e controle de acesso do relatório). A análise, as decisões e o que ainda está
+em andamento estão em [SEGURANCA.md](SEGURANCA.md).
+
 ## Sobre o projeto
 
 Este projeto foi desenvolvido com apoio de inteligência artificial, combinando

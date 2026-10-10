@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,15 +21,18 @@ public class UsuarioService implements UserDetailsService {
 
     private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginAttemptService loginAttemptService;
     private final String nomeAdministrador;
 
     public UsuarioService(
             UsuarioRepository repository,
             PasswordEncoder passwordEncoder,
+            LoginAttemptService loginAttemptService,
             @Value("${controljob.admin.usuario:admin}") String nomeAdministrador
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.loginAttemptService = loginAttemptService;
         this.nomeAdministrador = nomeAdministrador;
     }
 
@@ -40,14 +44,16 @@ public class UsuarioService implements UserDetailsService {
         return nomeAdministrador;
     }
 
-    @Transactional
-    public void configurarAdministrador(String senha) {
+    public synchronized void configurarAdministrador(String senha) {
+        if (senha == null || senha.trim().length() < 8) {
+            throw new IllegalArgumentException("A senha do administrador deve ter pelo menos 8 caracteres.");
+        }
         if (!precisaConfigurarAdministrador()) {
             throw new IllegalStateException("O administrador já foi configurado.");
         }
         Usuario administrador = new Usuario();
         administrador.setNomeUsuario(nomeAdministrador);
-        administrador.setSenhaHash(passwordEncoder.encode(senha));
+        administrador.setSenhaHash(passwordEncoder.encode(senha.trim()));
         administrador.setPerfil(PerfilUsuario.ADMIN);
         repository.save(administrador);
     }
@@ -73,7 +79,11 @@ public class UsuarioService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) {
-        Usuario usuario = repository.findByNomeUsuario(username.trim().toLowerCase())
+        String nome = username.trim().toLowerCase();
+        if (loginAttemptService.estaBloqueado(nome)) {
+            throw new LockedException("Conta temporariamente bloqueada por excesso de tentativas.");
+        }
+        Usuario usuario = repository.findByNomeUsuario(nome)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado."));
         return User.withUsername(usuario.getNomeUsuario())
                 .password(usuario.getSenhaHash())

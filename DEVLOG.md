@@ -446,6 +446,55 @@ PATCH APLICADO
 
 ---
 
+### Fase 10 — Endurecimento de segurança (v1.2)
+
+Depois de um bom tempo em uso, o código passou por uma **revisão completa de
+segurança**. O objetivo não era só "consertar bugs", e sim responder três
+perguntas: *o que está exposto? o que um invasor consegue fazer? e o que vale a
+pena corrigir hoje vs. depois?*
+
+**A auditoria encontrou três vetores sérios** (além de itens médios e baixos):
+
+1. **Console do H2 ligado em produção** — o banco em arquivo tem usuário `sa` e
+   senha vazia; o console permite executar SQL e código arbitrários (RCE/vazamento).
+2. **Login sem proteção contra força bruta** — qualquer pessoa podia tentar senhas
+   indefinidamente. Pior em instalações acessíveis por rede.
+3. **Bootstrap do admin inseguro** — com o banco vazio, a tela `/configurar-admin`
+   está aberta para quem alcançar o app; e havia uma corrida (check-then-save) que
+   podia criar usuários duplicados.
+
+**Decisões e correções aplicadas:**
+
+- **Console H2 desligado por padrão** (`H2_CONSOLE_ENABLED=false`) e **bloqueado na
+  camada web** (`denyAll`), mesmo que alguém o religue por engano.
+- **Lockout por usuário**: após 5 falhas em 15 minutos, a conta fica bloqueada por
+  15 minutos (em memória). O reset acontece no login bem-sucedido.
+- **Rate limit por IP**: no máximo 60 `POST /login` por IP em 15 minutos; acima
+  disso o servidor responde `429`.
+- **Senha inicial via ambiente**: `CONTROLJOB_ADMIN_SENHA`, se definida e com o
+  banco vazio, cria o admin no startup — o `/configurar-admin` deixa de ser o
+  caminho padrão (fica como fallback). Nunca sobrescreve usuário existente.
+- **Corrida do bootstrap corrigida**: `configurarAdministrador` virou `synchronized`
+  com re-checagem dentro do método.
+- **Controle de acesso endurecido**: `/relatorio` passou a exigir o perfil `ADMIN`
+  (antes qualquer usuário autenticado acessava pela URL, mesmo sem o link aparecer).
+
+**Validação** (com banco temporário, sem tocar em dados de produção):
+boot OK; 5 senhas erradas + a 6ª correta → bloqueada; 70 POSTs → 16 respostas
+`429`; console H2 → `403`; bootstrap via env comprovado pelos logs. Detalhes e o
+restante da análise estão no **[SEGURANCA.md](SEGURANCA.md)**.
+
+As **medidas médias/baixas** (container não-root, HTTPS ponta a ponta, banco com
+senha, atualização de dependências, CSP) foram registradas e seguem como
+próximos passos neste repositório.
+
+```
+HARDENING APLICADO
+[██████████████████████████████████████████] v1.2 — críticos e altos mitigados
+```
+
+---
+
 ## 6. O método: como a IA foi usada (e como não foi)
 
 Seria desonesto dizer que "a IA fez tudo". Também seria desonesto esconder que ela

@@ -7,16 +7,25 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
+    private final LoginRateLimitFilter loginRateLimitFilter;
+
+    public SecurityConfig(LoginRateLimitFilter loginRateLimitFilter) {
+        this.loginRateLimitFilter = loginRateLimitFilter;
+    }
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, UsuarioService usuarioService) throws Exception {
         return http
+                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/favicon.svg", "/login", "/configurar-admin/**").permitAll()
-                        .requestMatchers("/usuarios/**", "/admin/**", "/consertos/novo", "/consertos/*/editar", "/consertos/*/excluir").hasRole("ADMIN")
+                        .requestMatchers("/h2-console/**").denyAll()
+                        .requestMatchers("/usuarios/**", "/admin/**", "/consertos/novo", "/consertos/*/editar", "/consertos/*/excluir", "/relatorio").hasRole("ADMIN")
                         .requestMatchers("/consertos").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
