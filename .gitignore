@@ -1,0 +1,13 @@
+target/
+data/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
+
+# Segredos — nunca versionar
+.env
+.env.*
+!.env.example

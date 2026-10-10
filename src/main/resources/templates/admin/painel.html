@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Administrador · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/relatorio}">Relatório</a>
+        <a th:href="@{/admin}" class="active">Admin</a>
+        <a th:href="@{/usuarios}">Usuários</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
+
+    <section class="page-head">
+        <div>
+            <h1>Painel do Administrador</h1>
+            <p class="muted">Análise comparativa dos consertos, distribuição por tipo e reincidência.</p>
+        </div>
+        <form method="get" th:action="@{/admin}" class="filters" style="min-width: 320px;">
+            <label>
+                De
+                <input type="date" name="de" th:value="${de}">
+            </label>
+            <label>
+                Até
+                <input type="date" name="ate" th:value="${ate}">
+            </label>
+            <label style="justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary">Aplicar período</button>
+            </label>
+        </form>
+    </section>
+
+    <nav class="admin-tabs">
+        <a th:href="@{/admin}" class="active">Gráficos de consertos</a>
+        <a th:href="@{/admin/auditoria}">Auditoria</a>
+    </nav>
+
+    <div class="chips" style="margin-bottom: 1.25rem;">
+        <span class="chip" th:text="'Período: ' + ${painel.periodoRotulo}">Período: —</span>
+        <span class="chip" th:if="${de != null and ate != null}"
+              th:text="'Média de ' + ${#numbers.formatDecimal(painel.mediaMensalConsertos, 1, 'POINT', 2, 'COMMA')} + ' consertos/mês'">Média mensal</span>
+    </div>
+
+    <div th:if="${painel.vazio}" class="panel empty">
+        Nenhum conserto registrado no período selecionado.
+    </div>
+
+    <div th:unless="${painel.vazio}">
+        <section class="metrics cols-4">
+            <article class="metric">
+                <span class="metric-label">Consertos no período</span>
+                <strong class="metric-value" th:text="${painel.totalConsertos}">0</strong>
+                <span class="metric-hint" th:text="${painel.totalPendentes} + ' pendente(s) · ' + ${painel.totalFechados} + ' fechado(s)'">
+                    0 pendente(s)
+                </span>
+            </article>
+            <article class="metric accent">
+                <span class="metric-label">Valor total</span>
+                <strong class="metric-value"
+                        th:text="'R$ ' + ${#numbers.formatDecimal(painel.valorTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                <span class="metric-hint" th:text="'Ticket médio R$ ' + ${#numbers.formatDecimal(painel.ticketMedio, 1, 'POINT', 2, 'COMMA')}">
+                    Ticket médio
+                </span>
+            </article>
+            <article class="metric highlight">
+                <span class="metric-label">Comissão gerada</span>
+                <strong class="metric-value"
+                        th:text="'R$ ' + ${#numbers.formatDecimal(painel.comissaoTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                <span class="metric-hint">5% gerais · 50% placa/lojistas</span>
+            </article>
+            <article class="metric">
+                <span class="metric-label">Consertos reincidentes</span>
+                <strong class="metric-value"
+                        th:text="${#numbers.formatDecimal(painel.percentualRecorrente, 1, 'POINT', 1, 'COMMA')} + '%'">0%</strong>
+                <span class="metric-hint"
+                      th:text="${painel.totalRecorrentes} + ' aparelho(s) voltaram · R$ ' + ${#numbers.formatDecimal(painel.valorRecorrente, 1, 'POINT', 2, 'COMMA')}">
+                    0 aparelho(s)
+                </span>
+            </article>
+        </section>
+
+        <section class="chart-grid">
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Consertos por mês</h2>
+                </div>
+
+                <div class="bars">
+                    <div class="bar-col" th:each="m : ${painel.evolucaoMensal}">
+                        <span class="bar-value" th:text="${m.quantidade}">0</span>
+                        <div class="bar" th:classappend="${m.quantidade == 0} ? 'zero' : ''"
+                             th:style="'height:' + ${m.pctQuantidade} + '%'"
+                             th:title="${m.rotuloLongo} + ' — ' + ${m.quantidade} + ' conserto(s), R$ ' + ${#numbers.formatDecimal(m.valor, 1, 'POINT', 2, 'COMMA')}">
+                        </div>
+                        <span class="bar-label" th:text="${m.rotulo}">jan/26</span>
+                    </div>
+                </div>
+
+                <div class="table-wrap" style="margin-top: 1rem;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Consertos</th>
+                            <th>Valor</th>
+                            <th>Comissão</th>
+                            <th>Ticket médio</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="m : ${painel.evolucaoMensal}">
+                            <td th:text="${m.rotuloLongo}">Janeiro de 2026</td>
+                            <td class="mono" th:text="${m.quantidade}">0</td>
+                            <td class="mono"
+                                th:text="'R$ ' + ${#numbers.formatDecimal(m.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                            <td class="mono earn"
+                                th:text="'R$ ' + ${#numbers.formatDecimal(m.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                            <td class="mono"
+                                th:text="'R$ ' + ${#numbers.formatDecimal(m.ticketMedio, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Distribuição por tipo</h2>
+                </div>
+
+                <div class="donut">
+                    <div class="donut-wrap">
+                        <svg width="120" height="120" viewBox="0 0 120 120" role="img"
+                             aria-label="Distribuição de consertos por tipo">
+                            <circle class="donut-track" cx="60" cy="60" r="54"></circle>
+                            <circle th:each="f : ${painel.distribuicaoTipo}"
+                                    th:classappend="${f.classe}"
+                                    cx="60" cy="60" r="54"
+                                    th:stroke-dasharray="${f.dashLength} + ' ' + ${f.dashGap}"
+                                    th:stroke-dashoffset="${f.dashOffset}"></circle>
+                        </svg>
+                        <div class="donut-center">
+                            <strong th:text="${painel.totalConsertos}">0</strong>
+                            <span>consertos</span>
+                        </div>
+                    </div>
+
+                    <ul class="donut-legend">
+                        <li th:each="f : ${painel.distribuicaoTipo}">
+                            <span class="legend-swatch" th:classappend="${f.classe}"></span>
+                            <span class="legend-name">
+                                <span th:text="${f.rotulo}">Tipo</span>
+                                <span class="legend-detail"
+                                      th:text="${f.quantidade} + ' conserto(s) · R$ ' + ${#numbers.formatDecimal(f.valor, 1, 'POINT', 2, 'COMMA')} + ' · comissão R$ ' + ${#numbers.formatDecimal(f.comissao, 1, 'POINT', 2, 'COMMA')}">
+                                    detalhe
+                                </span>
+                            </span>
+                            <span class="legend-pct" th:text="${f.pct} + '%'">0%</span>
+                        </li>
+                    </ul>
+                </div>
+            </article>
+        </section>
+
+        <section class="chart-grid">
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Aparelhos que mais voltaram</h2>
+                    <span class="muted" style="font-size: 0.85rem;"
+                          th:text="${painel.totalRecorrentes} + ' reincidente(s) de ' + ${painel.quantosImei} + ' com IMEI'">
+                        0 reincidente(s)
+                    </span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(painel.recorrencias)}" class="empty">
+                    Nenhum aparelho com IMEI apareceu em dois consertos no período.
+                </div>
+
+                <ul class="hbars alert" th:unless="${#lists.isEmpty(painel.recorrencias)}">
+                    <li th:each="r : ${painel.recorrencias}">
+                        <span class="hb-label">
+                            <span class="mono" th:text="${r.imei}">IMEI</span>
+                            <span class="muted" th:text="' · ' + ${r.modelo}">· modelo</span>
+                        </span>
+                        <span class="hb-value"
+                              th:text="${r.quantidade} + '× · R$ ' + ${#numbers.formatDecimal(r.valorTotal, 1, 'POINT', 2, 'COMMA')} + ' · ' + ${r.intervaloDias} + 'd'">
+                            2×
+                        </span>
+                        <span class="hb-track">
+                            <span class="hb-fill" th:style="'width:' + ${r.pct} + '%'"></span>
+                        </span>
+                    </li>
+                </ul>
+
+                <p class="chart-note">
+                    Recorrência contada pelo mesmo IMEI. Aparelhos sem IMEI:
+                    <strong th:text="${painel.totalSemImei}">0</strong>
+                    <span th:text="' — esses não entram no cálculo de reincidência.'"></span>
+                </p>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Top 10 modelos</h2>
+                    <span class="muted" style="font-size: 0.85rem;">por volume de consertos</span>
+                </div>
+
+                <ul class="hbars">
+                    <li th:each="m : ${painel.topModelos}">
+                        <span class="hb-label" th:text="${m.rotulo}">Modelo</span>
+                        <span class="hb-value"
+                              th:text="${m.quantidade} + '× · R$ ' + ${#numbers.formatDecimal(m.valor, 1, 'POINT', 2, 'COMMA')}">
+                            0×
+                        </span>
+                        <span class="hb-track">
+                            <span class="hb-fill" th:style="'width:' + ${m.pct} + '%'"></span>
+                        </span>
+                    </li>
+                </ul>
+            </article>
+        </section>
+    </div>
+</main>
+</body>
+</html>

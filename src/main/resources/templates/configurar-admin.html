@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar administrador · ControlJob</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<main class="container narrow auth-page">
+    <section class="panel form">
+        <span class="brand-mark">CJ</span>
+        <h1>Primeiro acesso</h1>
+        <p class="muted">Defina a senha do administrador <strong th:text="${nomeAdministrador}">admin</strong>.</p>
+        <form th:action="@{/configurar-admin}" th:object="${form}" method="post">
+            <label>Nova senha<input th:field="*{senha}" type="password" autocomplete="new-password" required></label>
+            <span class="error" th:errors="*{senha}"></span>
+            <label>Confirmar senha<input th:field="*{confirmacaoSenha}" type="password" autocomplete="new-password" required></label>
+            <span class="error" th:errors="*{confirmacaoSenha}"></span>
+            <button class="btn btn-primary" type="submit">Criar acesso de administrador</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar · ControlJob</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<main class="container narrow auth-page">
+    <section class="panel form">
+        <span class="brand-mark">CJ</span>
+        <h1>Entrar no ControlJob</h1>
+        <p class="muted">Use seu usuário e senha para continuar.</p>
+        <div th:if="${param.error}" class="flash error">Usuário ou senha inválidos.</div>
+        <div th:if="${param.logout}" class="flash">Você saiu da conta.</div>
+        <div th:if="${param.configurado}" class="flash">Administrador configurado. Faça seu login.</div>
+        <form th:action="@{/login}" method="post">
+            <label>Usuário<input name="username" autocomplete="username" required autofocus></label>
+            <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
+            <button class="btn btn-primary" type="submit">Entrar</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

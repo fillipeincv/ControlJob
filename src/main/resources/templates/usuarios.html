@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários · ControlJob</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar"><a class="brand" th:href="@{/}"><span class="brand-mark">CJ</span><span class="brand-name">ControlJob</span></a>
+    <nav class="nav"><a th:href="@{/}">Dashboard</a><a th:href="@{/consertos/novo}">Novo conserto</a><a th:href="@{/lojistas}">Lojistas</a><a th:href="@{/admin}">Admin</a><a th:href="@{/usuarios}" class="active">Usuários</a><form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form></nav>
+</header>
+<main class="container narrow">
+    <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
+    <section class="page-head"><div><h1>Usuários</h1><p class="muted">Cadastre leitores para acompanhar os serviços e valores.</p></div></section>
+    <section class="panel form"><h2>Novo usuário de leitura</h2><p class="muted">O leitor pode consultar os registros e o valor a receber, sem alterá-los.</p>
+        <form th:action="@{/usuarios}" th:object="${form}" method="post">
+            <label>Usuário<input th:field="*{nomeUsuario}" autocomplete="username" required><span class="error" th:errors="*{nomeUsuario}"></span></label>
+            <label>Senha inicial<input th:field="*{senha}" type="password" autocomplete="new-password" required><span class="error" th:errors="*{senha}"></span></label>
+            <label>Confirmar senha<input th:field="*{confirmacaoSenha}" type="password" autocomplete="new-password" required><span class="error" th:errors="*{confirmacaoSenha}"></span></label>
+            <button class="btn btn-primary" type="submit">Criar usuário</button>
+        </form>
+    </section>
+    <section class="panel table-panel"><h2>Acessos cadastrados</h2><table><thead><tr><th>Usuário</th><th>Perfil</th></tr></thead><tbody><tr th:each="u : ${usuarios}"><td class="mono" th:text="${u.perfil == T(com.controljob.model.PerfilUsuario).ADMIN ? 'Administrador' : 'Leitura'}">Leitura</td></tr></tbody></table></section>
+</main>
+</body>
+</html>

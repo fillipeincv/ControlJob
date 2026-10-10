@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoria de Consertos · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/relatorio}">Relatório</a>
+        <a th:href="@{/admin}" class="active">Admin</a>
+        <a th:href="@{/usuarios}">Usuários</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
+
+    <section class="page-head">
+        <div>
+            <h1>Auditoria de Consertos</h1>
+            <p class="muted">Escolha o período e os filtros para conferir os registros antes de fechar o mês.</p>
+        </div>
+        <a class="btn btn-ghost"
+           th:href="@{/admin/auditoria/csv(de=${de},ate=${ate},tipo=${tipo},modelo=${modelo},q=${q},valorMin=${valorMin},valorMax=${valorMax},situacao=${situacao})}">
+            Exportar CSV
+        </a>
+    </section>
+
+    <nav class="admin-tabs">
+        <a th:href="@{/admin}">Gráficos de consertos</a>
+        <a th:href="@{/admin/auditoria}" class="active">Auditoria</a>
+    </nav>
+
+    <section class="panel">
+        <h2>Filtros</h2>
+        <form method="get" th:action="@{/admin/auditoria}">
+            <div class="filters">
+                <label>
+                    De
+                    <input type="date" name="de" th:value="${de}">
+                </label>
+                <label>
+                    Até
+                    <input type="date" name="ate" th:value="${ate}">
+                </label>
+                <label>
+                    Situação
+                    <select name="situacao">
+                        <option th:each="s : ${situacoes}" th:value="${s.name()}"
+                                th:text="${s.label}" th:selected="${s == situacao}">Todos</option>
+                    </select>
+                </label>
+                <label>
+                    Tipo de conserto
+                    <span class="check-group">
+                        <label class="check" th:each="t : ${tipos}">
+                            <input type="checkbox" name="tipo" th:value="${t.name()}"
+                                   th:checked="${tipo.contains(t)}">
+                            <span th:text="${t.label}">Tipo</span>
+                        </label>
+                    </span>
+                </label>
+                <label>
+                    Modelo de aparelho
+                    <select name="modelo">
+                        <option value="">Todos os modelos</option>
+                        <option th:each="m : ${auditoria.modelosDisponiveis}" th:value="${m}" th:text="${m}"
+                                th:selected="${m == modelo}">Modelo</option>
+                    </select>
+                </label>
+                <label>
+                    Busca (OS, IMEI, descrição)
+                    <input type="search" name="q" th:value="${q}" placeholder="Ex.: 123456789012345">
+                </label>
+                <label>
+                    Valor mínimo
+                    <input type="number" name="valorMin" step="0.01" min="0" th:value="${valorMin}"
+                           placeholder="0,00">
+                </label>
+                <label>
+                    Valor máximo
+                    <input type="number" name="valorMax" step="0.01" min="0" th:value="${valorMax}"
+                           placeholder="sem limite">
+                </label>
+                <label>
+                    Agrupar resultado por
+                    <select name="agrupar">
+                        <option th:each="a : ${agrupamentos}" th:value="${a.name()}" th:text="${a.label}"
+                                th:selected="${a == agrupar}">Sem agrupar</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <a class="btn btn-ghost" th:href="@{/admin/auditoria}">Limpar filtros</a>
+                <button type="submit" class="btn btn-primary">Auditar</button>
+            </div>
+        </form>
+    </section>
+
+    <div class="chips" style="margin-bottom: 1.25rem;">
+        <span class="chip" th:text="'Período: ' + ${auditoria.criterios.rotuloPeriodo()}">Período</span>
+        <span class="chip" th:if="${!#lists.isEmpty(tipo)}"
+              th:text="${#strings.listJoin(tipo.![label], ' · ')}">Tipos</span>
+        <span class="chip" th:if="${modelo != null and !modelo.isBlank()}" th:text="'Modelo: ' + ${modelo}">Modelo</span>
+        <span class="chip" th:if="${q != null and !q.isBlank()}" th:text="'Busca: ' + ${q}">Busca</span>
+        <span class="chip" th:if="${valorMin != null}" th:text="'Valor ≥ R$ ' + ${valorMin}">Mín</span>
+        <span class="chip" th:if="${valorMax != null}" th:text="'Valor ≤ R$ ' + ${valorMax}">Máx</span>
+        <span class="chip" th:if="${situacao.name() != 'TODOS'}" th:text="${situacao.label}">Situação</span>
+    </div>
+
+    <section class="metrics cols-4">
+        <article class="metric">
+            <span class="metric-label">Registros encontrados</span>
+            <strong class="metric-value" th:text="${auditoria.quantidade}">0</strong>
+            <span class="metric-hint"
+                  th:text="${auditoria.quantidadePendentes} + ' pendente(s) de fechamento'">0 pendente(s)</span>
+        </article>
+        <article class="metric accent">
+            <span class="metric-label">Valor somado</span>
+            <strong class="metric-value"
+                    th:text="'R$ ' + ${#numbers.formatDecimal(auditoria.valorTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint" th:text="'Maior R$ ' + ${#numbers.formatDecimal(auditoria.maiorValor, 1, 'POINT', 2, 'COMMA')} + ' · menor R$ ' + ${#numbers.formatDecimal(auditoria.menorValor, 1, 'POINT', 2, 'COMMA')}">
+                Maior/menor
+            </span>
+        </article>
+        <article class="metric">
+            <span class="metric-label">Ticket médio</span>
+            <strong class="metric-value"
+                    th:text="'R$ ' + ${#numbers.formatDecimal(auditoria.ticketMedio, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint">valor ÷ quantidade</span>
+        </article>
+        <article class="metric highlight">
+            <span class="metric-label">Salário total do período</span>
+            <strong class="metric-value"
+                    th:text="'R$ ' + ${#numbers.formatDecimal(auditoria.salarioTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint"
+                  th:text="'Fixo + comissão de R$ ' + ${#numbers.formatDecimal(auditoria.comissaoTotal, 1, 'POINT', 2, 'COMMA')}">
+                Fixo + comissão
+            </span>
+        </article>
+    </section>
+
+    <section class="panel" th:if="${!#lists.isEmpty(auditoria.grupos)}">
+        <div class="panel-head">
+            <h2 th:text="${agrupar.label}">Agrupamento</h2>
+        </div>
+        <ul class="hbars cool">
+            <li th:each="g : ${auditoria.grupos}">
+                <span class="hb-label" th:text="${g.rotulo}">Grupo</span>
+                <span class="hb-value"
+                      th:text="${g.quantidade} + '× · R$ ' + ${#numbers.formatDecimal(g.valor, 1, 'POINT', 2, 'COMMA')}">
+                    0×
+                </span>
+                <span class="hb-track">
+                    <span class="hb-fill" th:style="'width:' + ${g.pct} + '%'"></span>
+                </span>
+            </li>
+        </ul>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="panel-head">
+            <h2>Registros</h2>
+            <span class="muted" style="font-size: 0.85rem;" th:text="${auditoria.quantidade} + ' linha(s)'">0</span>
+        </div>
+
+        <div th:if="${auditoria.vazio}" class="empty">
+            Nenhum conserto encontrado com esses filtros.
+        </div>
+
+        <div class="table-wrap" th:if="${!auditoria.vazio}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Situação</th>
+                    <th>OS</th>
+                    <th>Modelo</th>
+                    <th>IMEI</th>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Comissão</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${auditoria.consertos}">
+                    <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td>
+                        <span class="tag" th:classappend="${c.dataFechamento == null} ? 'tag-REPARO_DE_PLACA' : 'tag-CONSERTO_PARA_LOJISTAS'"
+                              th:text="${c.dataFechamento == null} ? 'Pendente' : 'Fechado'">Pendente</span>
+                    </td>
+                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td th:text="${c.modeloAparelho}">Modelo</td>
+                    <td class="mono" th:text="${c.imei != null and !c.imei.isBlank()} ? ${c.imei} : '—'">—</td>
+                    <td>
+                        <span class="tag" th:classappend="' tag-' + ${c.tipoConserto.name()}"
+                              th:text="${c.tipoConserto.label}">Tipo</span>
+                    </td>
+                    <td class="desc" th:text="${c.descricao}">Descrição</td>
+                    <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

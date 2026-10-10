@@ -1,0 +1,829 @@
+:root {
+    --bg: #0f1419;
+    --bg-elevated: #1a222c;
+    --bg-soft: #232d3a;
+    --line: #2f3b4a;
+    --text: #e8eef4;
+    --muted: #8b9aab;
+    --accent: #f0a35e;
+    --accent-dim: rgba(240, 163, 94, 0.14);
+    --ok: #5ecf9a;
+    --danger: #e86b6b;
+    --radius: 14px;
+    --shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    font-family: "Outfit", system-ui, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    background:
+        radial-gradient(1200px 500px at 10% -10%, rgba(240, 163, 94, 0.12), transparent 55%),
+        radial-gradient(900px 400px at 90% 0%, rgba(94, 207, 154, 0.08), transparent 50%),
+        var(--bg);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--line);
+    background: rgba(15, 20, 25, 0.85);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brand-mark {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #f0a35e, #d9773a);
+    color: #1a1208;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.brand-name {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 1.15rem;
+}
+
+.nav {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.nav a {
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    color: var(--muted);
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nav a:hover,
+.nav a.active {
+    background: var(--bg-soft);
+    color: var(--text);
+}
+
+.logout {
+    margin: 0;
+}
+
+.logout button {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+    padding: 0.55rem 0.9rem;
+}
+
+.logout button:hover {
+    color: var(--text);
+}
+
+.auth-page {
+    margin-top: 8vh;
+}
+
+.auth-page .panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.auth-page .brand-mark {
+    margin-bottom: 0.25rem;
+}
+
+.auth-page h1 {
+    margin: 0;
+}
+
+.form form {
+    display: grid;
+    gap: 1rem;
+}
+
+.form label {
+    display: grid;
+    gap: 0.45rem;
+    font-weight: 600;
+}
+
+input, select, textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.72rem 0.8rem;
+    font: inherit;
+}
+
+.error {
+    color: var(--danger);
+    font-size: 0.88rem;
+}
+
+.nav a.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+}
+
+.container {
+    width: min(1180px, calc(100% - 2rem));
+    margin: 1.75rem auto 3rem;
+}
+
+.container.narrow {
+    width: min(720px, calc(100% - 2rem));
+}
+
+.page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-head h1 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.6rem, 2.5vw, 2rem);
+}
+
+.muted {
+    margin: 0;
+    color: var(--muted);
+}
+
+.optional {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.9em;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.metrics.compact {
+    grid-template-columns: minmax(240px, 360px);
+}
+
+.metric {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.3rem;
+    box-shadow: var(--shadow);
+}
+
+.metric.accent {
+    border-color: rgba(240, 163, 94, 0.35);
+    background: linear-gradient(180deg, rgba(240, 163, 94, 0.1), var(--bg-elevated));
+}
+
+.metric.highlight {
+    border-color: rgba(94, 207, 154, 0.35);
+    background: linear-gradient(180deg, rgba(94, 207, 154, 0.1), var(--bg-elevated));
+}
+
+.metric-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin-bottom: 0.45rem;
+}
+
+.metric-value {
+    display: block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.metric-hint {
+    display: block;
+    margin-top: 0.55rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.25rem;
+}
+
+.panel h2 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+}
+
+.panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.breakdown {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.breakdown li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.breakdown li:last-child {
+    border-bottom: none;
+}
+
+.breakdown em {
+    color: var(--muted);
+    font-style: normal;
+    font-size: 0.9em;
+}
+
+.breakdown strong {
+    font-family: "IBM Plex Mono", monospace;
+}
+
+.link {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.flash {
+    background: rgba(94, 207, 154, 0.12);
+    border: 1px solid rgba(94, 207, 154, 0.35);
+    color: var(--ok);
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.12s, border-color 0.12s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(145deg, #f0a35e, #d9773a);
+    color: #1a1208;
+}
+
+.btn-ghost {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.btn-danger {
+    background: transparent;
+    border-color: rgba(232, 107, 107, 0.4);
+    color: var(--danger);
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 0.85rem 0.7rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+th {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.mono {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.9em;
+}
+
+.earn {
+    color: var(--ok);
+}
+
+.desc {
+    max-width: 220px;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: var(--bg-soft);
+    white-space: nowrap;
+}
+
+.tag-CONSERTOS_EM_GERAL {
+    color: #9ec9ff;
+    background: rgba(158, 201, 255, 0.12);
+}
+
+.tag-REPARO_DE_PLACA {
+    color: #f0a35e;
+    background: var(--accent-dim);
+}
+
+.tag-CONSERTO_PARA_LOJISTAS {
+    color: #5ecf9a;
+    background: rgba(94, 207, 154, 0.12);
+}
+
+.actions {
+    display: flex;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.actions form {
+    margin: 0;
+}
+
+.actions .btn {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.85rem;
+}
+
+.empty {
+    color: var(--muted);
+    padding: 1.5rem 0.25rem;
+}
+
+.empty a {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.form input,
+.form select,
+.form textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    font: inherit;
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+    outline: 2px solid rgba(240, 163, 94, 0.35);
+    border-color: var(--accent);
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+/* ---------- Painel administrativo ---------- */
+
+.admin-tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.admin-tabs a {
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.admin-tabs a:hover,
+.admin-tabs a.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+}
+
+.metrics.cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.chart-grid .panel {
+    margin-bottom: 0;
+}
+
+.chart-note {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin: 0.75rem 0 0;
+}
+
+/* Barras verticais (evolução mensal) */
+
+.bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+    height: 190px;
+    padding-top: 0.5rem;
+}
+
+.bars .bar-col {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.3rem;
+    height: 100%;
+}
+
+.bars .bar-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+}
+
+.bars .bar {
+    width: 100%;
+    max-width: 46px;
+    min-height: 3px;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, #f0a35e, #d9773a);
+    transition: height 0.2s ease;
+}
+
+.bars .bar.zero {
+    background: var(--bg-soft);
+}
+
+.bars .bar-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top: 0.15rem;
+}
+
+/* Rosca (distribuição por tipo) */
+
+.donut {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.donut-wrap {
+    position: relative;
+    flex: 0 0 auto;
+    width: 120px;
+    height: 120px;
+}
+
+.donut svg {
+    transform: rotate(-90deg);
+}
+
+.donut circle {
+    fill: none;
+    stroke-width: 22;
+    stroke-linecap: butt;
+}
+
+.donut .donut-track {
+    stroke: var(--bg-soft);
+}
+
+.donut circle.tag-CONSERTOS_EM_GERAL {
+    stroke: #9ec9ff;
+}
+
+.donut circle.tag-REPARO_DE_PLACA {
+    stroke: #f0a35e;
+}
+
+.donut circle.tag-CONSERTO_PARA_LOJISTAS {
+    stroke: #5ecf9a;
+}
+
+.donut-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.donut-center strong {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 1.35rem;
+    display: block;
+    line-height: 1.1;
+}
+
+.donut-center span {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.donut-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1 1 200px;
+    min-width: 200px;
+}
+
+.donut-legend li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.donut-legend li:last-child {
+    border-bottom: none;
+}
+
+.legend-swatch {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 3px;
+    flex: 0 0 auto;
+    transform: translateY(1px);
+}
+
+.legend-swatch.tag-CONSERTOS_EM_GERAL {
+    background: #9ec9ff;
+}
+
+.legend-swatch.tag-REPARO_DE_PLACA {
+    background: #f0a35e;
+}
+
+.legend-swatch.tag-CONSERTO_PARA_LOJISTAS {
+    background: #5ecf9a;
+}
+
+.donut-legend .legend-name {
+    flex: 1 1 auto;
+    font-size: 0.92rem;
+}
+
+.donut-legend .legend-pct {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--accent);
+}
+
+.donut-legend .legend-detail {
+    display: block;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+/* Barras horizontais (modelos, agrupamentos) */
+
+.hbars {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hbars li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.25rem 0.75rem;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.hbars li:last-child {
+    border-bottom: none;
+}
+
+.hbars .hb-label {
+    font-size: 0.92rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hbars .hb-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.hbars .hb-track {
+    grid-column: 1 / -1;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    overflow: hidden;
+}
+
+.hbars .hb-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f0a35e, #d9773a);
+    min-width: 3px;
+}
+
+.hbars.cool .hb-fill {
+    background: linear-gradient(90deg, #9ec9ff, #6f9fe0);
+}
+
+.hbars.alert .hb-fill {
+    background: linear-gradient(90deg, #e86b6b, #d14545);
+}
+
+/* Filtros da auditoria */
+
+.filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0 1rem;
+}
+
+.filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.filters .check-group {
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filters .check {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+}
+
+.filters .check input {
+    width: auto;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.chips {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(240, 163, 94, 0.35);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+@media (max-width: 900px) {
+    .metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .page-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+}

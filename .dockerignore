@@ -1,0 +1,15 @@
+.git
+.idea
+.mvn
+data
+src
+README.md
+mvnw
+mvnw.cmd
+target/*
+!target/controljob-1.0.0.jar
+
+# Segredos: o .env entra no container via env_file, nunca na imagem
+.env
+.env.*
+!.env.example

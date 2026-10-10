@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' · ControlJob'">Relatório · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <style>
+        .breakdown { list-style: none; margin: 0; padding: 0; }
+        .breakdown li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
+        .breakdown li:last-child { border-bottom: none; }
+        .breakdown em { color: var(--muted); font-style: normal; font-size: 0.9em; }
+        .breakdown strong { font-family: "IBM Plex Mono", monospace; }
+        .breakdown .total-row { background: var(--bg-soft); border-radius: 8px; padding: 0.85rem 0.5rem; margin-top: 0.5rem; }
+        .breakdown .total-row strong { font-size: 1.1em; color: var(--accent); }
+        .summary-box { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0.5rem; background: var(--bg-soft); border-radius: 8px; margin-top: 0.5rem; }
+        .summary-box strong { font-family: "IBM Plex Mono", monospace; font-size: 1.2em; color: var(--accent); }
+        .page-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        .print-header { display: none; }
+
+        @media print {
+            @page { size: A4 landscape; margin: 12mm; }
+            html, body { background: #fff !important; color: #000 !important; }
+            body { font-size: 10pt; line-height: 1.35; }
+            .topbar, .page-head, .page-actions, .flash { display: none !important; }
+            .container { max-width: none; width: 100%; padding: 0; margin: 0; }
+            .print-header { display: block; margin-bottom: 8mm; }
+            .print-header-title { font-size: 16pt; font-weight: 700; }
+            .print-header-sub { display: flex; justify-content: space-between; margin-top: 1mm; font-size: 9.5pt; }
+            .print-header-rule { border-bottom: 2px solid #000; margin-top: 3mm; }
+            .panel, .summary-box, .breakdown .total-row {
+                box-shadow: none !important;
+                border-color: #999 !important;
+                background: #fff !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            .breakdown strong, .mono, .earn, .summary-box strong {
+                color: #000 !important;
+            }
+            .table-wrap { overflow: visible !important; }
+            table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+            thead { display: table-header-group; }
+            tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+            tr { border-bottom: 0.5pt solid #ccc; }
+            .tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .empty { color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">Dashboard</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}" th:classappend="${activePage == 'novo'} ? 'active' : ''">Novo conserto</a>
+        <a th:href="@{/lojistas}" th:classappend="${activePage == 'lojistas'} ? 'active' : ''">Lojistas</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}" th:classappend="${activePage == 'usuarios'} ? 'active' : ''">Usuários</a>
+        <a th:href="@{/relatorio}" class="active">Relatório</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
+
+    <section class="page-head">
+        <div>
+            <h1>Relatório de Pagamentos</h1>
+            <p class="muted">Resumo de comissões e todos os consertos registrados.</p>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir / Salvar PDF</button>
+            <a class="btn btn-ghost" th:href="@{/}">← Voltar ao dashboard</a>
+        </div>
+    </section>
+
+    <header class="print-header">
+        <div class="print-header-title">Relatório de Pagamentos · ControlJob</div>
+        <div class="print-header-sub">
+            <span>Todos os consertos registrados</span>
+            <span>Gerado em <strong th:text="${#temporals.format(T(java.time.LocalDateTime).now(), 'dd/MM/yyyy HH:mm')}">dd/mm/aaaa hh:mm</strong></span>
+        </div>
+        <div class="print-header-rule"></div>
+    </header>
+
+    <section class="panel">
+        <h2>Resumo de comissões por tipo</h2>
+        <ul class="breakdown">
+            <li>
+                <span>Consertos em Geral <em>(5%)</em></span>
+                <strong th:text="'R$ ' + ${#numbers.formatDecimal(dados.comissaoGerais, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            </li>
+            <li>
+                <span>Reparo de Placa <em>(50%)</em></span>
+                <strong th:text="'R$ ' + ${#numbers.formatDecimal(dados.comissaoPlaca, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            </li>
+            <li>
+                <span>Conserto para Lojistas <em>(50%)</em></span>
+                <strong th:text="'R$ ' + ${#numbers.formatDecimal(dados.comissaoLojistas, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            </li>
+            <li class="total-row">
+                <span>Total de comissões</span>
+                <strong th:text="'R$ ' + ${#numbers.formatDecimal(dados.totalComissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            </li>
+        </ul>
+        <div class="summary-box">
+            <span class="muted" style="font-size: 0.9rem;">Salário fixo mensal</span>
+            <strong class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(dados.salarioFixo, 1, 'POINT', 2, 'COMMA')}">R$ 1.935,00</strong>
+        </div>
+        <div class="summary-box" style="background: rgba(240, 163, 94, 0.08); border: 1px solid rgba(240, 163, 94, 0.25);">
+            <span style="font-weight: 600;">Salário total a pagar</span>
+            <strong style="font-family: 'IBM Plex Mono', monospace; font-size: 1.2em; color: var(--accent);" th:text="'R$ ' + ${#numbers.formatDecimal(dados.salarioTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+        </div>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="panel-head">
+            <h2>Todos os consertos</h2>
+        </div>
+
+        <div th:if="${#lists.isEmpty(dados.consertos)}" class="empty">
+            Nenhum conserto registrado.
+        </div>
+
+        <div class="table-wrap" th:if="${!#lists.isEmpty(dados.consertos)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>OS</th>
+                    <th>Modelo</th>
+                    <th>IMEI</th>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Comissão</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${dados.consertos}">
+                    <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td th:text="${c.modeloAparelho}">Modelo</td>
+                    <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>
+                    <td>
+                        <span class="tag" th:classappend="' tag-' + ${c.tipoConserto.name()}"
+                              th:text="${c.tipoConserto.label}">Tipo</span>
+                    </td>
+                    <td class="desc" th:text="${c.descricao}">Descrição</td>
+                    <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

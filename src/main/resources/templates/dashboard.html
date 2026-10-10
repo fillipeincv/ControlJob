@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}" class="active">Dashboard</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
+
+    <section class="page-head">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="muted">Resumo dos consertos, comissão e salário.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a sec:authorize="hasRole('ADMIN')" class="btn btn-primary" th:href="@{/consertos/novo}">+ Registrar conserto</a>
+            <a sec:authorize="hasRole('ADMIN')" class="btn btn-ghost" th:href="@{/relatorio}">📄 Gerar relatório</a>
+        </div>
+    </section>
+
+    <section class="metrics">
+        <article class="metric">
+            <span class="metric-label">Total em consertos</span>
+            <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(resumo.valorTotalConsertos, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint" th:text="${resumo.quantidadeConsertos} + ' registro(s)'">0 registros</span>
+        </article>
+        <article class="metric accent">
+            <span class="metric-label">Sua comissão</span>
+            <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(resumo.totalComissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint">5% gerais · 50% placa/lojistas</span>
+        </article>
+        <article class="metric highlight">
+            <span class="metric-label">Salário total</span>
+            <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(resumo.salarioTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint"
+                  th:text="'Fixo R$ ' + ${#numbers.formatDecimal(resumo.salarioFixo, 1, 'POINT', 2, 'COMMA')} + ' + comissão'">
+                Fixo + comissão
+            </span>
+        </article>
+    </section>
+
+    <section class="split">
+        <article class="panel">
+            <h2>Comissão por tipo</h2>
+            <ul class="breakdown">
+                <li>
+                    <span>Consertos em Geral <em>(5%)</em></span>
+                    <strong th:text="'R$ ' + ${#numbers.formatDecimal(resumo.comissaoGerais, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                </li>
+                <li>
+                    <span>Reparo de Placa <em>(50%)</em></span>
+                    <strong th:text="'R$ ' + ${#numbers.formatDecimal(resumo.comissaoPlaca, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                </li>
+                <li>
+                    <span>Conserto para Lojistas <em>(50%)</em></span>
+                    <strong th:text="'R$ ' + ${#numbers.formatDecimal(resumo.comissaoLojistas, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                </li>
+            </ul>
+            <a class="link" th:href="@{/lojistas}">Ver consertos de lojistas →</a>
+        </article>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="panel-head">
+            <h2>Todos os consertos</h2>
+        </div>
+
+        <div th:if="${#lists.isEmpty(consertos)}" class="empty">
+            Nenhum conserto registrado ainda.
+            <a th:href="@{/consertos/novo}">Cadastre o primeiro</a>.
+        </div>
+
+        <div class="table-wrap" th:if="${!#lists.isEmpty(consertos)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>OS</th>
+                    <th>Modelo</th>
+                    <th>IMEI</th>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Comissão</th>
+                    <th sec:authorize="hasRole('ADMIN')"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${consertos}">
+                    <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td th:text="${c.modeloAparelho}">Modelo</td>
+                    <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>
+                    <td>
+                        <span class="tag" th:classappend="' tag-' + ${c.tipoConserto.name()}"
+                              th:text="${c.tipoConserto.label}">Tipo</span>
+                    </td>
+                    <td class="desc" th:text="${c.descricao}">Descrição</td>
+                    <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td sec:authorize="hasRole('ADMIN')" class="actions">
+                        <a class="btn btn-ghost" th:href="@{/consertos/{id}/editar(id=${c.id})}">Editar</a>
+                        <form th:action="@{/consertos/{id}/excluir(id=${c.id})}" method="post"
+                              onsubmit="return confirm('Excluir este conserto?');">
+                            <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

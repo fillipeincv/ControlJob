@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo} + ' · ControlJob'">Conserto · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a th:href="@{/consertos/novo}" class="active">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container narrow">
+    <section class="page-head">
+        <div>
+            <h1 th:text="${titulo}">Novo conserto</h1>
+            <p class="muted">Preencha os dados do serviço realizado.</p>
+        </div>
+    </section>
+
+    <form class="panel form" th:action="@{/consertos}" th:object="${conserto}" method="post">
+        <input type="hidden" th:field="*{id}">
+
+        <div class="grid-2">
+            <label>
+                Modelo do aparelho *
+                <input type="text" th:field="*{modeloAparelho}" placeholder="Ex: iPhone 13 / Galaxy A54" required>
+                <span class="error" th:if="${#fields.hasErrors('modeloAparelho')}" th:errors="*{modeloAparelho}"></span>
+            </label>
+
+            <label>
+                Número da OS *
+                <input type="text" th:field="*{numeroOs}" placeholder="Ex: OS-1234" required>
+                <span class="error" th:if="${#fields.hasErrors('numeroOs')}" th:errors="*{numeroOs}"></span>
+            </label>
+        </div>
+
+        <div class="grid-2">
+            <label>
+                IMEI <span class="optional">(opcional)</span>
+                <input type="text" th:field="*{imei}" placeholder="15 dígitos">
+            </label>
+
+            <label>
+                Data do conserto *
+                <input type="date" th:field="*{dataConserto}" required>
+                <span class="error" th:if="${#fields.hasErrors('dataConserto')}" th:errors="*{dataConserto}"></span>
+            </label>
+        </div>
+
+        <div class="grid-2">
+            <label>
+                Tipo de conserto *
+                <select th:field="*{tipoConserto}" required>
+                    <option value="" disabled>Selecione o tipo</option>
+                    <option th:each="t : ${tipos}" th:value="${t}" th:text="${t.label}"></option>
+                </select>
+                <span class="error" th:if="${#fields.hasErrors('tipoConserto')}" th:errors="*{tipoConserto}"></span>
+            </label>
+
+            <label>
+                Valor (R$) *
+                <input type="number" th:field="*{valor}" step="0.01" min="0.01" placeholder="0,00" required>
+                <span class="error" th:if="${#fields.hasErrors('valor')}" th:errors="*{valor}"></span>
+            </label>
+        </div>
+
+        <label>
+            O que foi feito *
+            <textarea th:field="*{descricao}" rows="4" placeholder="Descreva o conserto realizado..." required></textarea>
+            <span class="error" th:if="${#fields.hasErrors('descricao')}" th:errors="*{descricao}"></span>
+        </label>
+
+        <div class="form-actions">
+            <a class="btn btn-ghost" th:href="@{/}">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar conserto</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

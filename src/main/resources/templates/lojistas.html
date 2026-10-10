@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consertos para Lojistas · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}" class="active">Lojistas</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <section class="page-head">
+        <div>
+            <h1>Consertos para Lojistas</h1>
+            <p class="muted">Registro dedicado dos serviços feitos para lojistas (comissão 50%).</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/consertos/novo}">+ Registrar conserto</a>
+    </section>
+
+    <section class="metrics compact">
+        <article class="metric accent">
+            <span class="metric-label">Comissão de lojistas</span>
+            <strong class="metric-value"
+                    th:text="'R$ ' + ${#numbers.formatDecimal(resumo.comissaoLojistas, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+            <span class="metric-hint">50% sobre o valor desses consertos</span>
+        </article>
+    </section>
+
+    <section class="panel table-panel">
+        <div th:if="${#lists.isEmpty(consertos)}" class="empty">
+            Nenhum conserto para lojistas cadastrado.
+        </div>
+
+        <div class="table-wrap" th:if="${!#lists.isEmpty(consertos)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>OS</th>
+                    <th>Modelo</th>
+                    <th>IMEI</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Comissão (50%)</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${consertos}">
+                    <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td th:text="${c.modeloAparelho}">Modelo</td>
+                    <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>
+                    <td class="desc" th:text="${c.descricao}">Descrição</td>
+                    <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td class="actions">
+                        <a class="btn btn-ghost" th:href="@{/consertos/{id}/editar(id=${c.id})}">Editar</a>
+                        <form th:action="@{/consertos/{id}/excluir(id=${c.id})}" method="post"
+                              onsubmit="return confirm('Excluir este conserto?');">
+                            <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

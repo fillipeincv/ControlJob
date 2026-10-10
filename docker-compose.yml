@@ -1,0 +1,15 @@
+# Monta o jar direto para nao exigir rebuild a cada deploy.
+services:
+  controljob:
+    build: .
+    container_name: controljob
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/app/data/controljob
+    volumes:
+      - ./data:/app/data
+      - ./target/controljob-1.0.0.jar:/app/app.jar:ro
