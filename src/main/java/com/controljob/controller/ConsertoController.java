@@ -10,7 +10,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Controller
 public class ConsertoController {
@@ -36,6 +38,52 @@ public class ConsertoController {
         model.addAttribute("tipos", TipoConserto.values());
         model.addAttribute("titulo", "Novo conserto");
         return "conserto-form";
+    }
+
+    @GetMapping("/consertos/{id}")
+    public String detalhe(@PathVariable Long id, Model model) {
+        Conserto conserto = service.buscarPorId(id);
+        List<Conserto> historico = service.historicoPorImei(conserto.getImei());
+
+        model.addAttribute("conserto", conserto);
+        model.addAttribute("historico", historico);
+        preencherResumo(model, historico);
+        return "conserto-detalhe";
+    }
+
+    @GetMapping("/historico")
+    public String historico(@RequestParam(required = false) String imei, Model model) {
+        if (imei != null && !imei.isBlank()) {
+            List<Conserto> historico = service.historicoPorImei(imei);
+            model.addAttribute("consertos", historico);
+            model.addAttribute("imeiBuscado", imei.trim());
+            preencherResumo(model, historico);
+        }
+        return "historico";
+    }
+
+    private void preencherResumo(Model model, List<Conserto> historico) {
+        BigDecimal valorTotal = BigDecimal.ZERO;
+        BigDecimal comissaoTotal = BigDecimal.ZERO;
+        LocalDate primeira = null;
+        LocalDate ultima = null;
+
+        for (Conserto c : historico) {
+            valorTotal = valorTotal.add(c.getValor());
+            comissaoTotal = comissaoTotal.add(c.getComissao());
+            if (primeira == null || c.getDataConserto().isBefore(primeira)) {
+                primeira = c.getDataConserto();
+            }
+            if (ultima == null || c.getDataConserto().isAfter(ultima)) {
+                ultima = c.getDataConserto();
+            }
+        }
+
+        model.addAttribute("passagens", historico.size());
+        model.addAttribute("valorHistorico", valorTotal);
+        model.addAttribute("comissaoHistorico", comissaoTotal);
+        model.addAttribute("primeiroConserto", primeira);
+        model.addAttribute("ultimoConserto", ultima);
     }
 
     @GetMapping("/consertos/{id}/editar")

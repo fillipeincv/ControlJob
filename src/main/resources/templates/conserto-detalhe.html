@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'OS ' + ${conserto.numeroOs} + ' · ControlJob'">OS · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/historico}">Histórico</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
+
+    <section class="page-head">
+        <div>
+            <h1 th:text="'Ordem de serviço ' + ${conserto.numeroOs}">Ordem de serviço</h1>
+            <p class="muted">Detalhes do serviço e histórico do aparelho.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a class="btn btn-ghost" th:href="@{/}">← Voltar</a>
+            <a sec:authorize="hasRole('ADMIN')" class="btn btn-primary"
+               th:href="@{/consertos/{id}/editar(id=${conserto.id})}">Editar</a>
+        </div>
+    </section>
+
+    <section class="panel" th:object="${conserto}">
+        <div class="panel-head">
+            <h2>Detalhes do conserto</h2>
+            <span class="tag" th:classappend="${conserto.dataFechamento == null} ? ' aberto' : ' fechado'"
+                  th:text="${conserto.dataFechamento == null} ? 'Em aberto' : 'Fechado'">Em aberto</span>
+        </div>
+        <dl class="detail-grid">
+            <div>
+                <dt>Data do conserto</dt>
+                <dd th:text="${#temporals.format(conserto.dataConserto, 'dd/MM/yyyy')}">01/01/2026</dd>
+            </div>
+            <div>
+                <dt>Data de fechamento</dt>
+                <dd th:text="${conserto.dataFechamento != null ? #temporals.format(conserto.dataFechamento, 'dd/MM/yyyy') : '—'}">—</dd>
+            </div>
+            <div>
+                <dt>Aparelho</dt>
+                <dd th:text="${conserto.modeloAparelho}">Modelo</dd>
+            </div>
+            <div>
+                <dt>IMEI</dt>
+                <dd class="mono" th:text="${conserto.imei != null and !conserto.imei.isBlank()} ? ${conserto.imei} : '—'">—</dd>
+            </div>
+            <div>
+                <dt>Tipo</dt>
+                <dd>
+                    <span class="tag" th:classappend="' tag-' + ${conserto.tipoConserto.name()}"
+                          th:text="${conserto.tipoConserto.label}">Tipo</span>
+                </dd>
+            </div>
+            <div>
+                <dt>Valor</dt>
+                <dd class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(conserto.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</dd>
+            </div>
+            <div>
+                <dt>Comissão</dt>
+                <dd class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(conserto.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</dd>
+            </div>
+        </dl>
+        <div>
+            <dt class="muted" style="font-size: 0.82rem;">O que foi feito</dt>
+            <p style="margin: 0.35rem 0 0;" th:text="${conserto.descricao}">Descrição</p>
+        </div>
+    </section>
+
+    <section class="panel" th:if="${conserto.imei != null and !conserto.imei.isBlank()}">
+        <div class="panel-head">
+            <h2>Histórico do aparelho</h2>
+            <span class="muted" style="font-size: 0.85rem;"
+                  th:text="${passagens} + ' passagem(ns) pela assistência'">0 passagens</span>
+        </div>
+
+        <section class="metrics" th:if="${passagens > 0}">
+            <article class="metric">
+                <span class="metric-label">Passagens</span>
+                <strong class="metric-value" th:text="${passagens}">0</strong>
+                <span class="metric-hint"
+                      th:text="${primeiroConserto != null ? 'Desde ' + #temporals.format(primeiroConserto, 'dd/MM/yyyy') : ''}">Desde</span>
+            </article>
+            <article class="metric accent">
+                <span class="metric-label">Valor histórico</span>
+                <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(valorHistorico, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                <span class="metric-hint"
+                      th:text="${ultimoConserto != null ? 'Último em ' + #temporals.format(ultimoConserto, 'dd/MM/yyyy') : ''}">Último</span>
+            </article>
+            <article class="metric highlight">
+                <span class="metric-label">Comissão histórica</span>
+                <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(comissaoHistorico, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                <span class="metric-hint">Somatório das passagens</span>
+            </article>
+        </section>
+
+        <div class="table-wrap" th:if="${passagens > 0}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>OS</th>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Comissão</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="h : ${historico}" th:classappend="${h.id == conserto.id} ? 'current-row' : ''">
+                    <td th:text="${#temporals.format(h.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td class="mono">
+                        <a th:href="@{/consertos/{id}(id=${h.id})}" th:text="${h.numeroOs}">OS-001</a>
+                        <span class="tag atual" th:if="${h.id == conserto.id}">atual</span>
+                    </td>
+                    <td>
+                        <span class="tag" th:classappend="' tag-' + ${h.tipoConserto.name()}"
+                              th:text="${h.tipoConserto.label}">Tipo</span>
+                    </td>
+                    <td class="desc" th:text="${h.descricao}">Descrição</td>
+                    <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(h.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                    <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(h.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel" th:if="${conserto.imei == null or conserto.imei.isBlank()}">
+        <div class="empty">
+            Este conserto não possui IMEI registrado, então não é possível localizar o histórico do aparelho.
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/{id}/editar(id=${conserto.id})}">Informar IMEI</a>.
+        </div>
+    </section>
+</main>
+</body>
+</html>

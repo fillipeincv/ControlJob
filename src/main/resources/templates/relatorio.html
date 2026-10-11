@@ -147,7 +147,7 @@
                 <tbody>
                 <tr th:each="c : ${dados.consertos}">
                     <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
-                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
                     <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>
                     <td>

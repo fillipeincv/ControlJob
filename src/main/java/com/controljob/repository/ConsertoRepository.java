@@ -28,6 +28,8 @@ public interface ConsertoRepository extends JpaRepository<Conserto, Long>, JpaSp
 
     List<Conserto> findByDataFechamentoIsNullAndDataConsertoLessThanEqual(LocalDate dataLimite);
 
+    List<Conserto> findByImeiIgnoreCaseOrderByDataConsertoDesc(String imei);
+
     @Modifying
     @Query("UPDATE Conserto c SET c.dataFechamento = :fechamento WHERE c.id IN :ids")
     int marcarFechados(@Param("ids") List<Long> ids, @Param("fechamento") LocalDate fechamento);

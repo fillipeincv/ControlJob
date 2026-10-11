@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico do aparelho · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/historico}" class="active">Histórico</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
+</header>
+
+<main class="container">
+    <section class="page-head">
+        <div>
+            <h1>Histórico do aparelho</h1>
+            <p class="muted">Busque pelo IMEI para ver todas as ordens de serviço do aparelho.</p>
+        </div>
+    </section>
+
+    <section class="panel">
+        <form method="get" th:action="@{/historico}">
+            <div class="filters" style="grid-template-columns: minmax(220px, 1fr) auto; align-items: end;">
+                <label>
+                    IMEI
+                    <input type="search" name="imei" th:value="${imeiBuscado}" placeholder="Ex.: 123456789012345">
+                </label>
+                <div class="form-actions" style="margin: 0;">
+                    <a class="btn btn-ghost" th:if="${imeiBuscado != null}" th:href="@{/historico}">Limpar</a>
+                    <button type="submit" class="btn btn-primary">Buscar histórico</button>
+                </div>
+            </div>
+        </form>
+    </section>
+
+    <div th:if="${imeiBuscado != null}">
+        <section class="metrics" th:if="${passagens > 0}">
+            <article class="metric">
+                <span class="metric-label">Passagens pela assistência</span>
+                <strong class="metric-value" th:text="${passagens}">0</strong>
+                <span class="metric-hint"
+                      th:text="${primeiroConserto != null ? 'Desde ' + #temporals.format(primeiroConserto, 'dd/MM/yyyy') : ''}">Desde</span>
+            </article>
+            <article class="metric accent">
+                <span class="metric-label">Valor histórico</span>
+                <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(valorHistorico, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                <span class="metric-hint"
+                      th:text="${ultimoConserto != null ? 'Último em ' + #temporals.format(ultimoConserto, 'dd/MM/yyyy') : ''}">Último</span>
+            </article>
+            <article class="metric highlight">
+                <span class="metric-label">Comissão histórica</span>
+                <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(comissaoHistorico, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
+                <span class="metric-hint">Somatório das passagens</span>
+            </article>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-head">
+                <h2 th:text="'Ordens de serviço · IMEI ' + ${imeiBuscado}">Ordens de serviço</h2>
+                <span class="muted" style="font-size: 0.85rem;" th:text="${passagens} + ' registro(s)'">0</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(consertos)}" class="empty">
+                Nenhuma ordem de serviço encontrada para este IMEI.
+            </div>
+
+            <div class="table-wrap" th:if="${!#lists.isEmpty(consertos)}">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>OS</th>
+                        <th>Modelo</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Comissão</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${consertos}">
+                        <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                        <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                        <td th:text="${c.modeloAparelho}">Modelo</td>
+                        <td>
+                            <span class="tag" th:classappend="' tag-' + ${c.tipoConserto.name()}"
+                                  th:text="${c.tipoConserto.label}">Tipo</span>
+                        </td>
+                        <td class="desc" th:text="${c.descricao}">Descrição</td>
+                        <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                        <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                        <td class="actions">
+                            <a class="btn btn-ghost" th:href="@{/consertos/{id}(id=${c.id})}">Ver OS</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</main>
+</body>
+</html>

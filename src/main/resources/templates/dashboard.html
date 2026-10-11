@@ -20,6 +20,7 @@
         <a th:href="@{/}" class="active">Dashboard</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}">Novo conserto</a>
         <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/historico}">Histórico</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
@@ -111,7 +112,7 @@
                 <tbody>
                 <tr th:each="c : ${consertos}">
                     <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
-                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
                     <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>
                     <td>

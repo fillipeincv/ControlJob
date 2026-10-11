@@ -20,6 +20,7 @@
         <a th:href="@{/}">Dashboard</a>
         <a th:href="@{/consertos/novo}" class="active">Novo conserto</a>
         <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/historico}">Histórico</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
         <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
@@ -53,8 +54,9 @@
 
         <div class="grid-2">
             <label>
-                IMEI <span class="optional">(opcional)</span>
-                <input type="text" th:field="*{imei}" placeholder="15 dígitos">
+                IMEI *
+                <input type="text" th:field="*{imei}" placeholder="15 dígitos" required>
+                <span class="error" th:if="${#fields.hasErrors('imei')}" th:errors="*{imei}"></span>
             </label>
 
             <label>

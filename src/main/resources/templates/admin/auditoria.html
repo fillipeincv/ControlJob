@@ -206,7 +206,7 @@
                         <span class="tag" th:classappend="${c.dataFechamento == null} ? 'tag-REPARO_DE_PLACA' : 'tag-CONSERTO_PARA_LOJISTAS'"
                               th:text="${c.dataFechamento == null} ? 'Pendente' : 'Fechado'">Pendente</span>
                     </td>
-                    <td class="mono" th:text="${c.numeroOs}">OS-001</td>
+                    <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
                     <td class="mono" th:text="${c.imei != null and !c.imei.isBlank()} ? ${c.imei} : '—'">—</td>
                     <td>

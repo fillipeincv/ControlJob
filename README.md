@@ -4,11 +4,19 @@ Aplicação Java para controle de consertos, comissões e salário.
 
 ## Funcionalidades
 
-- Cadastro de consertos com: modelo, número da OS, IMEI (opcional), tipo, descrição, valor e data
+- Cadastro de consertos com: modelo, número da OS, IMEI (obrigatório), tipo, descrição, valor e data
 - Dashboard com:
   - valor total dos consertos
   - comissão acumulada
   - salário total (fixo + comissão)
+- **Histórico do aparelho**: ao abrir uma ordem de serviço (`/consertos/{id}`) é exibido o
+  detalhe do conserto junto do resumo do aparelho identificado pelo IMEI — quantas vezes
+  passou pela assistência, valor e comissão acumulados e a lista de todas as OS daquele
+  aparelho. A busca dedicada em `/historico` permite consultar o histórico informando o IMEI.
+  O IMEI é o identificador do aparelho (espaços são ignorados na comparação) e o histórico é
+  visível tanto para administradores quanto para usuários de leitura. Uma OS de um aparelho
+  que já passou antes pela assistência (mesmo IMEI, nova OS) aparece automaticamente no
+  histórico.
 - Salário fixo editável pelo painel do administrador (salvo no banco, com histórico preservado nos relatórios já gerados)
 - Tipos de conserto e comissão:
   - **Consertos em Geral** → 5%

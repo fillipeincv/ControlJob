@@ -43,10 +43,25 @@ public class ConsertoService {
 
     @Transactional
     public Conserto salvar(Conserto conserto) {
-        if (conserto.getImei() != null && conserto.getImei().isBlank()) {
-            conserto.setImei(null);
-        }
+        conserto.setImei(normalizarImei(conserto.getImei()));
         return repository.save(conserto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Conserto> historicoPorImei(String imei) {
+        String normalizado = normalizarImei(imei);
+        if (normalizado == null) {
+            return List.of();
+        }
+        return repository.findByImeiIgnoreCaseOrderByDataConsertoDesc(normalizado);
+    }
+
+    private String normalizarImei(String imei) {
+        if (imei == null) {
+            return null;
+        }
+        String limpo = imei.replaceAll("\\s+", "");
+        return limpo.isEmpty() ? null : limpo;
     }
 
     @Transactional
