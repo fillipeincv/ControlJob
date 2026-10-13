@@ -14,7 +14,7 @@ public record Auditoria(
         BigDecimal maiorValor,
         BigDecimal menorValor,
         int quantidade,
-        int quantidadePendentes,
+        int quantidadeAguardando,
         BigDecimal salarioTotal,
         Agrupamento agrupamento,
         List<Grupo> grupos,

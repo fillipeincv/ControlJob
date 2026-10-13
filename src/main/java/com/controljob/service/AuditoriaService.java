@@ -48,13 +48,13 @@ public class AuditoriaService {
         BigDecimal comissaoTotal = BigDecimal.ZERO;
         BigDecimal maior = null;
         BigDecimal menor = null;
-        int pendentes = 0;
+        int aguardando = 0;
 
         for (Conserto c : consertos) {
             valorTotal = valorTotal.add(c.getValor());
             comissaoTotal = comissaoTotal.add(c.getComissao());
-            if (c.getDataFechamento() == null) {
-                pendentes++;
+            if (c.getDataRetirada() == null) {
+                aguardando++;
             }
             if (maior == null || c.getValor().compareTo(maior) > 0) {
                 maior = c.getValor();
@@ -75,7 +75,7 @@ public class AuditoriaService {
                 escala(maior),
                 escala(menor),
                 quantidade,
-                pendentes,
+                aguardando,
                 escala(salarioConfigService.salarioAtual().add(comissaoTotal)),
                 agrupamento,
                 agrupar(consertos, agrupamento),
@@ -131,7 +131,7 @@ public class AuditoriaService {
             case MES -> rotularMes(YearMonth.from(c.getDataConserto()));
             case TIPO -> c.getTipoConserto().getLabel();
             case MODELO -> c.getModeloAparelho();
-            case SITUACAO -> c.getDataFechamento() == null ? SituacaoConserto.PENDENTE.getLabel() : SituacaoConserto.FECHADO.getLabel();
+            case SITUACAO -> c.getDataRetirada() == null ? SituacaoConserto.AGUARDANDO_RETIRADA.getLabel() : SituacaoConserto.RETIRADO.getLabel();
             case NENHUM -> "—";
         };
     }
@@ -151,11 +151,12 @@ public class AuditoriaService {
                 .append("Descrição").append(SEPARADOR_CSV)
                 .append("Valor").append(SEPARADOR_CSV)
                 .append("Comissão").append(SEPARADOR_CSV)
+                .append("Retirada").append(SEPARADOR_CSV)
                 .append("Fechado em").append('\n');
 
         for (Conserto c : auditoria.consertos()) {
             csv.append(c.getDataConserto().format(DIA)).append(SEPARADOR_CSV)
-                    .append(c.getDataFechamento() == null ? "Pendente" : "Fechado").append(SEPARADOR_CSV)
+                    .append(c.getDataRetirada() == null ? "Aguardando retirada" : "Retirado pelo cliente").append(SEPARADOR_CSV)
                     .append(campo(c.getNumeroOs())).append(SEPARADOR_CSV)
                     .append(campo(c.getModeloAparelho())).append(SEPARADOR_CSV)
                     .append(campo(c.getImei())).append(SEPARADOR_CSV)
@@ -163,6 +164,7 @@ public class AuditoriaService {
                     .append(campo(c.getDescricao())).append(SEPARADOR_CSV)
                 .append(c.getValor().toPlainString()).append(SEPARADOR_CSV)
                 .append(escala(c.getComissao()).toPlainString()).append(SEPARADOR_CSV)
+                    .append(c.getDataRetirada() == null ? "" : c.getDataRetirada().format(DIA)).append(SEPARADOR_CSV)
                     .append(c.getDataFechamento() == null ? "" : c.getDataFechamento().format(DIA))
                     .append('\n');
         }

@@ -58,6 +58,7 @@
                     <th>OS</th>
                     <th>Modelo</th>
                     <th>IMEI</th>
+                    <th>Situação</th>
                     <th>Descrição</th>
                     <th>Valor</th>
                     <th>Comissão (50%)</th>
@@ -65,11 +66,15 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="c : ${consertos}">
+                <tr th:each="c : ${consertos}" th:classappend="${c.dataRetirada == null ? ' row-aguardando' : ''}">
                     <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
                     <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
                     <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>
+                    <td>
+                        <span class="tag" th:classappend="${c.dataRetirada == null ? ' tag-aguardando' : ' tag-retirado'}"
+                              th:text="${c.dataRetirada == null ? 'Aguardando retirada' : 'Retirado ' + #temporals.format(c.dataRetirada, 'dd/MM/yyyy')}">Aguardando</span>
+                    </td>
                     <td class="desc" th:text="${c.descricao}">Descrição</td>
                     <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
                     <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>

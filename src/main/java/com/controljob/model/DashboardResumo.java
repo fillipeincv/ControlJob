@@ -9,6 +9,7 @@ public class DashboardResumo {
     private final BigDecimal salarioFixo;
     private final BigDecimal salarioTotal;
     private final long quantidadeConsertos;
+    private final long quantidadeAguardando;
     private final BigDecimal comissaoGerais;
     private final BigDecimal comissaoPlaca;
     private final BigDecimal comissaoLojistas;
@@ -19,6 +20,7 @@ public class DashboardResumo {
             BigDecimal salarioFixo,
             BigDecimal salarioTotal,
             long quantidadeConsertos,
+            long quantidadeAguardando,
             BigDecimal comissaoGerais,
             BigDecimal comissaoPlaca,
             BigDecimal comissaoLojistas
@@ -28,6 +30,7 @@ public class DashboardResumo {
         this.salarioFixo = salarioFixo;
         this.salarioTotal = salarioTotal;
         this.quantidadeConsertos = quantidadeConsertos;
+        this.quantidadeAguardando = quantidadeAguardando;
         this.comissaoGerais = comissaoGerais;
         this.comissaoPlaca = comissaoPlaca;
         this.comissaoLojistas = comissaoLojistas;
@@ -51,6 +54,10 @@ public class DashboardResumo {
 
     public long getQuantidadeConsertos() {
         return quantidadeConsertos;
+    }
+
+    public long getQuantidadeAguardando() {
+        return quantidadeAguardando;
     }
 
     public BigDecimal getComissaoGerais() {

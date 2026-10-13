@@ -129,7 +129,7 @@
             <span class="metric-label">Registros encontrados</span>
             <strong class="metric-value" th:text="${auditoria.quantidade}">0</strong>
             <span class="metric-hint"
-                  th:text="${auditoria.quantidadePendentes} + ' pendente(s) de fechamento'">0 pendente(s)</span>
+                  th:text="${auditoria.quantidadeAguardando} + ' aguardando retirada'">0 aguardando</span>
         </article>
         <article class="metric accent">
             <span class="metric-label">Valor somado</span>
@@ -190,6 +190,7 @@
                 <tr>
                     <th>Data</th>
                     <th>Situação</th>
+                    <th>Retirada</th>
                     <th>OS</th>
                     <th>Modelo</th>
                     <th>IMEI</th>
@@ -203,9 +204,10 @@
                 <tr th:each="c : ${auditoria.consertos}">
                     <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
                     <td>
-                        <span class="tag" th:classappend="${c.dataFechamento == null} ? 'tag-REPARO_DE_PLACA' : 'tag-CONSERTO_PARA_LOJISTAS'"
-                              th:text="${c.dataFechamento == null} ? 'Pendente' : 'Fechado'">Pendente</span>
+                        <span class="tag" th:classappend="${c.dataRetirada == null ? 'tag-aguardando' : 'tag-retirado'}"
+                              th:text="${c.dataRetirada == null ? 'Aguardando retirada' : 'Retirado'}">Aguardando</span>
                     </td>
+                    <td th:text="${c.dataRetirada != null ? #temporals.format(c.dataRetirada, 'dd/MM/yyyy') : '—'}">—</td>
                     <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
                     <td class="mono" th:text="${c.imei != null and !c.imei.isBlank()} ? ${c.imei} : '—'">—</td>

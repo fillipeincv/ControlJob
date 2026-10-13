@@ -22,7 +22,7 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public RelatorioData gerarRelatorio() {
-        List<Conserto> todos = repository.findAllByDataFechamentoIsNullOrderByIdAsc();
+        List<Conserto> todos = repository.findAllByDataFechamentoIsNullAndDataRetiradaIsNotNullOrderByIdAsc();
         BigDecimal valorTotal = repository.somarValorTotal();
         BigDecimal comissaoGerais = repository.somarValorPorTipo(TipoConserto.CONSERTOS_EM_GERAL)
                 .multiply(TipoConserto.CONSERTOS_EM_GERAL.getPercentualComissao());

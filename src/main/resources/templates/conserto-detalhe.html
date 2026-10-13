@@ -45,13 +45,17 @@
     <section class="panel" th:object="${conserto}">
         <div class="panel-head">
             <h2>Detalhes do conserto</h2>
-            <span class="tag" th:classappend="${conserto.dataFechamento == null} ? ' aberto' : ' fechado'"
-                  th:text="${conserto.dataFechamento == null} ? 'Em aberto' : 'Fechado'">Em aberto</span>
+            <span class="tag" th:classappend="${conserto.dataRetirada == null ? ' tag-aguardando' : ' tag-retirado'}"
+                  th:text="${conserto.dataRetirada == null ? 'Aguardando retirada pelo cliente' : 'Retirado pelo cliente em ' + #temporals.format(conserto.dataRetirada, 'dd/MM/yyyy')}">Aguardando retirada</span>
         </div>
         <dl class="detail-grid">
             <div>
                 <dt>Data do conserto</dt>
                 <dd th:text="${#temporals.format(conserto.dataConserto, 'dd/MM/yyyy')}">01/01/2026</dd>
+            </div>
+            <div>
+                <dt>Retirada pelo cliente</dt>
+                <dd th:text="${conserto.dataRetirada != null ? #temporals.format(conserto.dataRetirada, 'dd/MM/yyyy') : 'Aguardando retirada'}">Aguardando retirada</dd>
             </div>
             <div>
                 <dt>Data de fechamento</dt>
@@ -84,6 +88,40 @@
         <div>
             <dt class="muted" style="font-size: 0.82rem;">O que foi feito</dt>
             <p style="margin: 0.35rem 0 0;" th:text="${conserto.descricao}">Descrição</p>
+        </div>
+    </section>
+
+    <section class="panel" sec:authorize="hasRole('ADMIN')">
+        <div class="panel-head">
+            <h2>Retirada pelo cliente</h2>
+            <span class="tag" th:classappend="${conserto.dataRetirada == null ? ' tag-aguardando' : ' tag-retirado'}"
+                  th:text="${conserto.dataRetirada == null ? 'Aguardando retirada' : 'Retirado'}">Aguardando</span>
+        </div>
+
+        <form th:if="${conserto.dataRetirada == null}" th:action="@{/consertos/{id}/retirada(id=${conserto.id})}" method="post">
+            <div class="filters" style="grid-template-columns: minmax(200px, 260px) auto; align-items: end;">
+                <label>
+                    Data da retirada
+                    <input type="date" name="data" th:value="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')}" required>
+                </label>
+                <div class="form-actions" style="margin: 0;">
+                    <button type="submit" class="btn btn-primary">Registrar retirada</button>
+                </div>
+            </div>
+            <p class="muted" style="font-size: 0.85rem; margin-top: 0.5rem;">
+                Enquanto o aparelho não for retirado, este conserto não entra no valor a receber (comissão).
+            </p>
+        </form>
+
+        <div th:if="${conserto.dataRetirada != null}">
+            <p class="muted" style="margin: 0 0 0.75rem;">
+                Retirado pelo cliente em
+                <strong th:text="${#temporals.format(conserto.dataRetirada, 'dd/MM/yyyy')}">01/01/2026</strong>.
+            </p>
+            <form th:action="@{/consertos/{id}/retirada/cancelar(id=${conserto.id})}" method="post"
+                  onsubmit="return confirm('Desfazer a retirada deste conserto?');">
+                <button type="submit" class="btn btn-ghost">Desfazer retirada</button>
+            </form>
         </div>
     </section>
 

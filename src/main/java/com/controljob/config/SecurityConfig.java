@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/favicon.svg", "/login", "/configurar-admin/**").permitAll()
                         .requestMatchers("/h2-console/**").denyAll()
-                        .requestMatchers("/usuarios/**", "/admin/**", "/consertos/novo", "/consertos/*/editar", "/consertos/*/excluir", "/relatorio").hasRole("ADMIN")
+                        .requestMatchers("/usuarios/**", "/admin/**", "/consertos/novo", "/consertos/*/editar", "/consertos/*/excluir", "/consertos/*/retirada", "/consertos/*/retirada/**", "/relatorio").hasRole("ADMIN")
                         .requestMatchers("/consertos").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

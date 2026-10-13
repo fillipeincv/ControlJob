@@ -4,6 +4,7 @@ import com.controljob.model.Conserto;
 import com.controljob.model.TipoConserto;
 import com.controljob.service.ConsertoService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -117,6 +118,32 @@ public class ConsertoController {
         service.excluir(id);
         redirect.addFlashAttribute("mensagem", "Conserto excluído.");
         return "redirect:/";
+    }
+
+    @PostMapping("/consertos/{id}/retirada")
+    public String registrarRetirada(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            RedirectAttributes redirect
+    ) {
+        try {
+            service.registrarRetirada(id, data);
+            redirect.addFlashAttribute("mensagem", "Retirada pelo cliente registrada.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirect.addFlashAttribute("mensagem", e.getMessage());
+        }
+        return "redirect:/consertos/" + id;
+    }
+
+    @PostMapping("/consertos/{id}/retirada/cancelar")
+    public String desfazerRetirada(@PathVariable Long id, RedirectAttributes redirect) {
+        try {
+            service.desfazerRetirada(id);
+            redirect.addFlashAttribute("mensagem", "Retirada desfeita. O conserto volta a aguardar retirada.");
+        } catch (IllegalStateException e) {
+            redirect.addFlashAttribute("mensagem", e.getMessage());
+        }
+        return "redirect:/consertos/" + id;
     }
 
     @GetMapping("/lojistas")

@@ -404,6 +404,21 @@ th {
     background: rgba(94, 207, 154, 0.12);
 }
 
+.tag-aguardando {
+    color: var(--muted);
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+}
+
+.tag-retirado {
+    color: var(--ok);
+    background: rgba(94, 207, 154, 0.12);
+}
+
+tr.row-aguardando {
+    opacity: 0.62;
+}
+
 .actions {
     display: flex;
     gap: 0.4rem;

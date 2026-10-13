@@ -49,6 +49,9 @@ public class Conserto {
     private LocalDate dataConserto;
 
     @Column
+    private LocalDate dataRetirada;
+
+    @Column
     private LocalDate dataFechamento;
 
     public Conserto() {
@@ -131,5 +134,13 @@ public class Conserto {
 
     public void setDataFechamento(LocalDate dataFechamento) {
         this.dataFechamento = dataFechamento;
+    }
+
+    public LocalDate getDataRetirada() {
+        return dataRetirada;
+    }
+
+    public void setDataRetirada(LocalDate dataRetirada) {
+        this.dataRetirada = dataRetirada;
     }
 }

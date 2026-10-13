@@ -74,7 +74,7 @@
     <section class="page-head">
         <div>
             <h1>Relatório de Pagamentos</h1>
-            <p class="muted">Resumo de comissões e todos os consertos registrados.</p>
+            <p class="muted">Resumo de comissões dos consertos já retirados pelo cliente.</p>
         </div>
         <div class="page-actions">
             <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir / Salvar PDF</button>
@@ -85,7 +85,7 @@
     <header class="print-header">
         <div class="print-header-title">Relatório de Pagamentos · ControlJob</div>
         <div class="print-header-sub">
-            <span>Todos os consertos registrados</span>
+            <span>Somente consertos retirados pelo cliente</span>
             <span>Gerado em <strong th:text="${#temporals.format(T(java.time.LocalDateTime).now(), 'dd/MM/yyyy HH:mm')}">dd/mm/aaaa hh:mm</strong></span>
         </div>
         <div class="print-header-rule"></div>
@@ -123,11 +123,11 @@
 
     <section class="panel table-panel">
         <div class="panel-head">
-            <h2>Todos os consertos</h2>
+            <h2>Consertos retirados (a pagar)</h2>
         </div>
 
         <div th:if="${#lists.isEmpty(dados.consertos)}" class="empty">
-            Nenhum conserto registrado.
+            Nenhum conserto retirado pelo cliente.
         </div>
 
         <div class="table-wrap" th:if="${!#lists.isEmpty(dados.consertos)}">
@@ -135,6 +135,7 @@
                 <thead>
                 <tr>
                     <th>Data</th>
+                    <th>Retirada</th>
                     <th>OS</th>
                     <th>Modelo</th>
                     <th>IMEI</th>
@@ -147,6 +148,7 @@
                 <tbody>
                 <tr th:each="c : ${dados.consertos}">
                     <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
+                    <td th:text="${c.dataRetirada != null ? #temporals.format(c.dataRetirada, 'dd/MM/yyyy') : '—'}">01/01/2026</td>
                     <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
                     <td class="mono" th:text="${c.imei != null ? c.imei : '—'}">—</td>

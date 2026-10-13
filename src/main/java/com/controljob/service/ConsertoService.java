@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -47,6 +48,29 @@ public class ConsertoService {
         return repository.save(conserto);
     }
 
+    @Transactional
+    public Conserto registrarRetirada(Long id, LocalDate data) {
+        if (data == null) {
+            throw new IllegalArgumentException("Informe a data da retirada.");
+        }
+        Conserto conserto = buscarPorId(id);
+        if (conserto.getDataFechamento() != null) {
+            throw new IllegalStateException("Este conserto já foi fechado no mês e não pode ser alterado.");
+        }
+        conserto.setDataRetirada(data);
+        return repository.save(conserto);
+    }
+
+    @Transactional
+    public void desfazerRetirada(Long id) {
+        Conserto conserto = buscarPorId(id);
+        if (conserto.getDataFechamento() != null) {
+            throw new IllegalStateException("Este conserto já foi fechado no mês e não pode ser alterado.");
+        }
+        conserto.setDataRetirada(null);
+        repository.save(conserto);
+    }
+
     @Transactional(readOnly = true)
     public List<Conserto> historicoPorImei(String imei) {
         String normalizado = normalizarImei(imei);
@@ -77,8 +101,15 @@ public class ConsertoService {
         BigDecimal comissaoGerais = BigDecimal.ZERO;
         BigDecimal comissaoPlaca = BigDecimal.ZERO;
         BigDecimal comissaoLojistas = BigDecimal.ZERO;
+        long quantidade = 0;
+        long aguardando = 0;
 
         for (Conserto c : todos) {
+            if (c.getDataRetirada() == null) {
+                aguardando++;
+                continue;
+            }
+            quantidade++;
             valorTotal = valorTotal.add(c.getValor());
             BigDecimal comissao = c.getComissao();
 
@@ -98,7 +129,8 @@ public class ConsertoService {
                 scale(totalComissao),
                 scale(salarioFixo),
                 scale(salarioTotal),
-                todos.size(),
+                quantidade,
+                aguardando,
                 scale(comissaoGerais),
                 scale(comissaoPlaca),
                 scale(comissaoLojistas)

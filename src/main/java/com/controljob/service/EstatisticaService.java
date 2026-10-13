@@ -41,6 +41,7 @@ public class EstatisticaService {
         BigDecimal valorTotal = BigDecimal.ZERO;
         BigDecimal comissaoTotal = BigDecimal.ZERO;
         int fechados = 0;
+        int retirados = 0;
 
         Map<TipoConserto, BigDecimal> valorPorTipo = new LinkedHashMap<>();
         Map<TipoConserto, Long> qtdPorTipo = new LinkedHashMap<>();
@@ -48,14 +49,20 @@ public class EstatisticaService {
         Map<YearMonth, List<Conserto>> porMes = new LinkedHashMap<>();
 
         for (Conserto c : consertos) {
-            valorTotal = valorTotal.add(c.getValor());
-            comissaoTotal = comissaoTotal.add(c.getComissao());
+            boolean retirado = c.getDataRetirada() != null;
+            if (retirado) {
+                retirados++;
+                valorTotal = valorTotal.add(c.getValor());
+                comissaoTotal = comissaoTotal.add(c.getComissao());
+            }
             if (c.getDataFechamento() != null) {
                 fechados++;
             }
 
             TipoConserto tipo = c.getTipoConserto();
-            valorPorTipo.merge(tipo, c.getValor(), BigDecimal::add);
+            if (retirado) {
+                valorPorTipo.merge(tipo, c.getValor(), BigDecimal::add);
+            }
             qtdPorTipo.merge(tipo, 1L, Long::sum);
             qtdPorModelo.merge(c.getModeloAparelho(), 1L, Long::sum);
             porMes.computeIfAbsent(YearMonth.from(c.getDataConserto()), k -> new ArrayList<>()).add(c);
@@ -69,7 +76,7 @@ public class EstatisticaService {
                 total,
                 escala(valorTotal),
                 escala(comissaoTotal),
-                media(valorTotal, total),
+                media(valorTotal, retirados),
                 fechados,
                 pendentes,
                 total == 0 ? BigDecimal.ZERO : escala(BigDecimal.valueOf(total).divide(BigDecimal.valueOf(mesesEntre(de, ate)), 2, RoundingMode.HALF_UP)),
@@ -98,8 +105,10 @@ public class EstatisticaService {
             BigDecimal valor = BigDecimal.ZERO;
             BigDecimal comissao = BigDecimal.ZERO;
             for (Conserto c : doMes) {
-                valor = valor.add(c.getValor());
-                comissao = comissao.add(c.getComissao());
+                if (c.getDataRetirada() != null) {
+                    valor = valor.add(c.getValor());
+                    comissao = comissao.add(c.getComissao());
+                }
             }
             acumulado.put(cursor, new AcumuladoMes(doMes.size(), escala(valor), escala(comissao)));
             cursor = cursor.plusMonths(1);
@@ -165,7 +174,9 @@ public class EstatisticaService {
 
         Map<String, BigDecimal> valorPorModelo = new LinkedHashMap<>();
         for (Conserto c : consertos) {
-            valorPorModelo.merge(c.getModeloAparelho(), c.getValor(), BigDecimal::add);
+            if (c.getDataRetirada() != null) {
+                valorPorModelo.merge(c.getModeloAparelho(), c.getValor(), BigDecimal::add);
+            }
         }
 
         long maximo = qtdPorModelo.values().stream().mapToLong(Long::longValue).max().orElse(0);

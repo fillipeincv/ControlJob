@@ -3,8 +3,8 @@ package com.controljob.model;
 public enum SituacaoConserto {
 
     TODOS("Todos"),
-    PENDENTE("Pendentes"),
-    FECHADO("Fechados");
+    AGUARDANDO_RETIRADA("Aguardando retirada"),
+    RETIRADO("Retirado pelo cliente");
 
     private final String label;
 

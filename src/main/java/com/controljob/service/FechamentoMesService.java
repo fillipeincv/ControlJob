@@ -88,7 +88,7 @@ public class FechamentoMesService {
         LocalDate ultimoDia = mes.atEndOfMonth();
         LocalDate hoje = agora.toLocalDate();
 
-        List<Conserto> consertos = repository.findByDataFechamentoIsNullAndDataConsertoLessThanEqual(ultimoDia);
+        List<Conserto> consertos = repository.findByDataFechamentoIsNullAndDataRetiradaIsNotNullAndDataRetiradaLessThanEqual(ultimoDia);
         if (consertos.isEmpty()) {
             return new Resultado(0, null, null, false, "Nenhum registro pendente de fechamento.");
         }
@@ -170,6 +170,7 @@ public class FechamentoMesService {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", c.getId());
         m.put("dataConserto", c.getDataConserto());
+        m.put("dataRetirada", c.getDataRetirada());
         m.put("numeroOs", c.getNumeroOs());
         m.put("modeloAparelho", c.getModeloAparelho());
         m.put("imei", c.getImei());
@@ -200,16 +201,17 @@ public class FechamentoMesService {
                     + " · Salário total: " + MOEDA.format(salarioTotal), normal));
             document.add(new Paragraph(" "));
 
-            PdfPTable tabela = new PdfPTable(8);
+            PdfPTable tabela = new PdfPTable(9);
             tabela.setWidthPercentage(100);
-            tabela.setWidths(new float[]{1.3f, 1.2f, 1.9f, 1.7f, 1.6f, 3.4f, 1.4f, 1.4f});
-            for (String h : new String[]{"Data", "OS", "Modelo", "IMEI", "Tipo", "Descrição", "Valor", "Comissão"}) {
+            tabela.setWidths(new float[]{1.3f, 1.3f, 1.2f, 1.9f, 1.7f, 1.6f, 3.4f, 1.4f, 1.4f});
+            for (String h : new String[]{"Data", "Retirada", "OS", "Modelo", "IMEI", "Tipo", "Descrição", "Valor", "Comissão"}) {
                 PdfPCell cel = new PdfPCell(new Phrase(h, cabecalho));
                 cel.setHorizontalAlignment(Element.ALIGN_LEFT);
                 tabela.addCell(cel);
             }
             for (Conserto c : consertos) {
                 tabela.addCell(new Phrase(DATA_BR.format(c.getDataConserto()), normal));
+                tabela.addCell(new Phrase(c.getDataRetirada() != null ? DATA_BR.format(c.getDataRetirada()) : "—", normal));
                 tabela.addCell(new Phrase(nulo(c.getNumeroOs()), normal));
                 tabela.addCell(new Phrase(nulo(c.getModeloAparelho()), normal));
                 tabela.addCell(new Phrase(c.getImei() != null ? c.getImei() : "—", normal));

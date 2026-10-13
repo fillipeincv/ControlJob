@@ -18,21 +18,25 @@ public interface ConsertoRepository extends JpaRepository<Conserto, Long>, JpaSp
 
     List<Conserto> findAllByDataFechamentoIsNullOrderByDataConsertoDesc();
 
-    List<Conserto> findAllByDataFechamentoIsNullOrderByIdAsc();
+    List<Conserto> findAllByDataFechamentoIsNullAndDataRetiradaIsNotNullOrderByIdAsc();
 
-    @Query("SELECT COALESCE(SUM(c.valor), 0) FROM Conserto c WHERE c.dataFechamento IS NULL")
+    @Query("SELECT COALESCE(SUM(c.valor), 0) FROM Conserto c WHERE c.dataFechamento IS NULL AND c.dataRetirada IS NOT NULL")
     BigDecimal somarValorTotal();
 
-    @Query("SELECT COALESCE(SUM(c.valor), 0) FROM Conserto c WHERE c.tipoConserto = :tipo AND c.dataFechamento IS NULL")
+    @Query("SELECT COALESCE(SUM(c.valor), 0) FROM Conserto c WHERE c.tipoConserto = :tipo AND c.dataFechamento IS NULL AND c.dataRetirada IS NOT NULL")
     BigDecimal somarValorPorTipo(TipoConserto tipo);
 
-    List<Conserto> findByDataFechamentoIsNullAndDataConsertoLessThanEqual(LocalDate dataLimite);
+    List<Conserto> findByDataFechamentoIsNullAndDataRetiradaIsNotNullAndDataRetiradaLessThanEqual(LocalDate dataLimite);
 
     List<Conserto> findByImeiIgnoreCaseOrderByDataConsertoDesc(String imei);
 
     @Modifying
     @Query("UPDATE Conserto c SET c.dataFechamento = :fechamento WHERE c.id IN :ids")
     int marcarFechados(@Param("ids") List<Long> ids, @Param("fechamento") LocalDate fechamento);
+
+    @Modifying
+    @Query("UPDATE Conserto c SET c.dataRetirada = c.dataConserto WHERE c.dataRetirada IS NULL")
+    int preencherRetiradaHistorica();
 
     @Query("SELECT DISTINCT c.modeloAparelho FROM Conserto c WHERE c.modeloAparelho IS NOT NULL AND c.modeloAparelho <> '' ORDER BY c.modeloAparelho")
     List<String> listarModelos();

@@ -46,7 +46,7 @@
         <article class="metric">
             <span class="metric-label">Total em consertos</span>
             <strong class="metric-value" th:text="'R$ ' + ${#numbers.formatDecimal(resumo.valorTotalConsertos, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</strong>
-            <span class="metric-hint" th:text="${resumo.quantidadeConsertos} + ' registro(s)'">0 registros</span>
+            <span class="metric-hint" th:text="${resumo.quantidadeConsertos} + ' retirado(s) · ' + ${resumo.quantidadeAguardando} + ' aguardando retirada'">0 registros</span>
         </article>
         <article class="metric accent">
             <span class="metric-label">Sua comissão</span>
@@ -103,6 +103,7 @@
                     <th>Modelo</th>
                     <th>IMEI</th>
                     <th>Tipo</th>
+                    <th>Situação</th>
                     <th>Descrição</th>
                     <th>Valor</th>
                     <th>Comissão</th>
@@ -110,7 +111,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="c : ${consertos}">
+                <tr th:each="c : ${consertos}" th:classappend="${c.dataRetirada == null ? ' row-aguardando' : ''}">
                     <td th:text="${#temporals.format(c.dataConserto, 'dd/MM/yyyy')}">01/01/2026</td>
                     <td class="mono"><a th:href="@{/consertos/{id}(id=${c.id})}" th:text="${c.numeroOs}">OS-001</a></td>
                     <td th:text="${c.modeloAparelho}">Modelo</td>
@@ -119,10 +120,18 @@
                         <span class="tag" th:classappend="' tag-' + ${c.tipoConserto.name()}"
                               th:text="${c.tipoConserto.label}">Tipo</span>
                     </td>
+                    <td>
+                        <span class="tag" th:classappend="${c.dataRetirada == null ? ' tag-aguardando' : ' tag-retirado'}"
+                              th:text="${c.dataRetirada == null ? 'Aguardando retirada' : 'Retirado ' + #temporals.format(c.dataRetirada, 'dd/MM/yyyy')}">Aguardando</span>
+                    </td>
                     <td class="desc" th:text="${c.descricao}">Descrição</td>
                     <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
                     <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
                     <td sec:authorize="hasRole('ADMIN')" class="actions">
+                        <form th:if="${c.dataRetirada == null}" th:action="@{/consertos/{id}/retirada(id=${c.id})}" method="post">
+                            <input type="hidden" name="data" th:value="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')}">
+                            <button type="submit" class="btn btn-primary" title="Registrar retirada hoje">Retirar hoje</button>
+                        </form>
                         <a class="btn btn-ghost" th:href="@{/consertos/{id}/editar(id=${c.id})}">Editar</a>
                         <form th:action="@{/consertos/{id}/excluir(id=${c.id})}" method="post"
                               onsubmit="return confirm('Excluir este conserto?');">

@@ -110,7 +110,7 @@ campo foi escolhido pensando no vocabulário real do trabalho.
 ### Entidades
 
 - **`Conserto`** — o coração. Guarda modelo, OS, IMEI, tipo, descrição, valor,
-  data e `dataFechamento`.
+  data, `dataRetirada` (retirada pelo cliente) e `dataFechamento`.
 - **`Usuario`** — nome de usuário, hash da senha e perfil.
 
 ### Enums de regra
@@ -118,7 +118,7 @@ campo foi escolhido pensando no vocabulário real do trabalho.
 - **`TipoConserto`** — Consertos em Geral, Reparo de Placa, Conserto para
   Lojistas. Cada um carrega seu percentual de comissão.
 - **`PerfilUsuario`** — `ADMIN` ou `LEITOR`.
-- **`SituacaoConserto`** — Todos, Pendentes, Fechados (para filtros).
+- **`SituacaoConserto`** — Todos, Aguardando retirada, Retirado (para filtros).
 - **`Agrupamento`** — como agrupar a auditoria (mês, tipo, modelo, situação).
 
 ### A decisão central: comissão no domínio
@@ -149,13 +149,19 @@ conta. Mudar uma taxa no futuro é editar uma linha.
 
 ### O estado de um conserto
 
-A vida de um conserto cabe em uma coluna: `dataFechamento`.
+A vida de um conserto é governada por **duas datas**:
 
-- `null` → **pendente** (ainda entra no salário do mês)
-- preenchida → **fechado** (arquivado, não conta de novo)
+- `dataRetirada` — quando o cliente levou o aparelho.
+  - `null` → **aguardando retirada** (aparece nas listas, mas **não** entra no
+    valor a receber nem na comissão)
+  - preenchida → **retirado** (passa a contar na comissão)
+- `dataFechamento` — quando o conserto foi arquivado pelo fechamento mensal.
+  - `null` → **aberto**
+  - preenchida → **arquivado** (não conta de novo)
 
-Esse único campo é a máquina de estados que evita o bug clássico de "paguei duas
-vezes pelo mesmo conserto".
+A comissão só "vale" quando o aparelho é retirado: é isso que evita pagar por um
+conserto que o cliente nunca buscou. E `dataFechamento` continua sendo a máquina
+de estados que evita o bug clássico de "paguei duas vezes pelo mesmo conserto".
 
 ### Dinheiro nunca é `double`
 
@@ -495,6 +501,43 @@ HARDENING APLICADO
 
 ---
 
+### Fase 11 — Fluxo de retirada (v1.3)
+
+Uma regra de negócio que só apareceu **com a aplicação na mão de quem usa**: a
+comissão não devia contar no cadastro, e sim quando o cliente **levasse o
+aparelho**. Havia conserto registrado que o dono nunca buscou — pagar comissão
+por eles seria pagar por serviço que não saiu.
+
+A solução foi dar ao conserto um novo marco: `dataRetirada`.
+
+- Ao cadastrar, o conserto nasce **aguardando retirada** e **não** entra em valor
+  nem comissão.
+- Um clique ("Retirar hoje" no dashboard, ou a data exata na tela de detalhe)
+  marca a retirada — e só então o item passa a valer.
+- Dá para **desfazer** a retirada (erro de digitação), desde que o conserto ainda
+  não tenha sido arquivado pelo fechamento.
+- O **mês da comissão** passa a ser o mês da retirada (não mais o do conserto).
+
+Isso tocou todas as visões que somam dinheiro — dashboard, relatório, painel
+analítico, auditoria (CSV) e o fechamento mensal (PDF/JSON, que ganhou a coluna
+"Retirada"). As listas continuam mostrando **todos** os consertos abertos, mas os
+**totais contam só os retirados**.
+
+Registros antigos (criados antes da mudança) foram migrados automaticamente no
+startup: `dataRetirada = dataConserto`, de forma idempotente — nada é recalculado
+duas vezes.
+
+**Validação:** boot com banco descartável; smoke test HTTP de ponta a ponta
+(login, cadastro, retirada, páginas, CSV); conferência de que o relatório só
+lista retirados e de que a migração roda uma única vez.
+
+```
+NOVA REGRA DE NEGÓCIO
+[██████████████████████████████████████████] v1.3 — comissão só após a retirada
+```
+
+---
+
 ## 6. O método: como a IA foi usada (e como não foi)
 
 Seria desonesto dizer que "a IA fez tudo". Também seria desonesto esconder que ela
@@ -537,7 +580,7 @@ foi protagonista técnica. A divisão real do trabalho:
 | Monólito Spring Boot | simplicidade de operar e manter | menos "escala" horizontal (não é o problema aqui) |
 | H2 em arquivo | zero administração, backup por cópia | não ideal para múltiplas instâncias |
 | Comissão no enum | fonte única de verdade | taxa fixa no código (mudança = novo deploy) |
-| `dataFechamento` como estado | evita dupla contagem | um único campo binário (simples e suficiente) |
+| `dataRetirada` + `dataFechamento` como estados | comissão só conta após a retirada; evita dupla contagem | dois campos em vez de um (mais explícito) |
 | DTOs como records | imutabilidade e clareza | mais uma classe por visão |
 | Specifications | filtros combináveis e legíveis | curva de aprendizado inicial |
 | Segredos em `.env` | nada sensível no repositório | exige configuração no deploy |

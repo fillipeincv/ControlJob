@@ -88,8 +88,8 @@ public final class ConsertoSpecifications {
                 return null;
             }
             return switch (situacao) {
-                case PENDENTE -> cb.isNull(root.get("dataFechamento"));
-                case FECHADO -> cb.isNotNull(root.get("dataFechamento"));
+                case AGUARDANDO_RETIRADA -> cb.isNull(root.get("dataRetirada"));
+                case RETIRADO -> cb.isNotNull(root.get("dataRetirada"));
                 case TODOS -> null;
             };
         };
