@@ -420,18 +420,24 @@ tr.row-aguardando {
 }
 
 .actions {
-    display: flex;
-    gap: 0.4rem;
     white-space: nowrap;
+    vertical-align: middle;
+    text-align: right;
 }
 
 .actions form {
+    display: inline;
     margin: 0;
 }
 
 .actions .btn {
     padding: 0.4rem 0.65rem;
     font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.actions > * + * {
+    margin-left: 0.4rem;
 }
 
 .empty {
