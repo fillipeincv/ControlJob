@@ -54,9 +54,8 @@
 
         <div class="grid-2">
             <label>
-                IMEI *
-                <input type="text" th:field="*{imei}" placeholder="15 dígitos" required>
-                <span class="error" th:if="${#fields.hasErrors('imei')}" th:errors="*{imei}"></span>
+                IMEI
+                <input type="text" th:field="*{imei}" placeholder="15 dígitos (opcional)">
             </label>
 
             <label>

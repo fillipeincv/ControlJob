@@ -25,7 +25,6 @@ public class Conserto {
     @Column(nullable = false)
     private String numeroOs;
 
-    @NotBlank(message = "IMEI é obrigatório")
     @Column
     private String imei;
 
