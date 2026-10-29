@@ -523,9 +523,10 @@ analítico, auditoria (CSV) e o fechamento mensal (PDF/JSON, que ganhou a coluna
 "Retirada"). As listas continuam mostrando **todos** os consertos abertos, mas os
 **totais contam só os retirados**.
 
-Registros antigos (criados antes da mudança) foram migrados automaticamente no
-startup: `dataRetirada = dataConserto`, de forma idempotente — nada é recalculado
-duas vezes.
+Registros antigos (criados antes da mudança) foram migrados na implantação
+inicial: `dataRetirada = dataConserto`, de forma idempotente. Esse runner acabou
+sendo revisto depois — ele rodava em todo startup e podia marcar consertos
+indevidamente; a correção está na **Fase 12**.
 
 **Validação:** boot com banco descartável; smoke test HTTP de ponta a ponta
 (login, cadastro, retirada, páginas, CSV); conferência de que o relatório só
@@ -534,6 +535,62 @@ lista retirados e de que a migração roda uma única vez.
 ```
 NOVA REGRA DE NEGÓCIO
 [██████████████████████████████████████████] v1.3 — comissão só após a retirada
+```
+
+---
+
+### Fase 12 — Testes automatizados e integridade dos dados (v1.4)
+
+Com o sistema em produção e dados reais, a prioridade deixou de ser adicionar
+funcionalidade e passou a ser **não perder nem corromper o que já existia**. Até
+aqui, toda validação era manual; não havia uma única linha em `src/test`.
+
+**O risco mais grave não estava em uma tela, e sim no startup.** O runner de
+migração da retirada rodava em **toda** inicialização e preenchia
+`dataRetirada = dataConserto` em qualquer conserto com retirada nula. Isso
+funcionava uma vez, para o banco antigo, mas em um restart posterior podia marcar
+como "retirado" um conserto que ainda aguardava o cliente — alterando comissões e
+totais sem ninguém pedir. A migração passou a ser **opt-in**
+(`CONTROLJOB_MIGRAR_RETIRADA_HISTORICA=false` por padrão) e limitada a registros
+com `dataConserto < 2026-10-12`.
+
+**A rede de segurança.** Foi criada a primeira suíte automatizada do projeto:
+**67 testes** com JUnit 5, Mockito, AssertJ, `@DataJpaTest` e
+`@SpringBootTest` + MockMvc. Ela cobre:
+
+- regras de comissão, retirada, dashboard, relatório, fechamento e estatísticas;
+- o corte da migração histórica, em H2 real, e a criação dos índices;
+- autorização por perfil (anônimo, `LEITOR`, `ADMIN`), CSRF, 404 amigável e a
+  ausência do runner sem opt-in;
+- CSV, lockout, usuários e o lock do fechamento mensal.
+
+**Correções que os testes ajudaram a expor ou confirmar:**
+
+- formulário de conserto passou a usar **DTO**, eliminando *mass assignment* de
+  `dataRetirada`/`dataFechamento`;
+- conserto fechado ficou **imutável** para edição, exclusão e retirada;
+- erros passaram a ter página amigável (`404/400/409/500`), sem vazar
+  `e.getMessage()` em falha inesperada;
+- CSV neutraliza fórmulas (`= + - @`) e o fechamento concorrente é bloqueado por
+  lock;
+- o contador de lockout não zera mais quando duas falhas caem no mesmo
+  milissegundo;
+- `Clock` injetável no fuso `America/Sao_Paulo` e limpeza do rate limit em
+  memória;
+- índices nas colunas usadas por dashboard, relatório e fechamento.
+
+**Validação:** `./mvnw clean package` no repositório público, com os **67 testes
+verdes** e o jar gerado. O build usa Java 26 no ambiente de desenvolvimento e
+mantém o alvo Java 21; o surefire recebeu `-Dnet.bytebuddy.experimental=true`.
+
+**Nota operacional:** se o runner antigo chegou a rodar em restarts da produção,
+pode haver consertos marcados como retirados indevidamente. Não existe reversão
+automática segura — é preciso comparar com backup/histórico antes de confiar nos
+totais antigos.
+
+```
+REDE DE SEGURANÇA
+[██████████████████████████████████████████] v1.4 — 67 testes e migração protegida
 ```
 
 ---
@@ -643,19 +700,7 @@ criando consertos em todos os tipos, conferindo os totais do dashboard,
 disparando o fechamento e inspecionando o PDF, o JSON e o e-mail. Em
 **2026-10-29** foi adicionada uma suíte automatizada com 67 testes (serviços,
 repositório em H2 e integração de segurança com MockMvc), executada no
-`./mvnw clean package`.
-
-### Atualização 2026-10-29 — testes e correções de segurança
-
-- Primeira suíte automatizada do projeto, cobrindo comissões, retirada,
-  fechamento, auditoria/CSV, lockout, usuários e autorização por perfil.
-- Migração de retirada histórica passou a ser **opt-in** e limitada a registros
-  anteriores a 2026-10-12; antes ela rodava em todo startup.
-- Formulário de conserto passou a usar DTO (fim do *mass assignment*), conserto
-  fechado ficou imutável, erros passaram a ter página amigável (404/400/409/500)
-  e o CSV neutraliza fórmulas.
-- Fechamento mensal ganhou lock contra execução concorrente, e o rate limit do
-  login passou a limpar entradas expiradas.
+`./mvnw clean package` — ver **Fase 12**.
 
 ---
 
