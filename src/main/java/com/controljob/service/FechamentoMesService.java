@@ -28,9 +28,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.NumberFormat;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
@@ -40,11 +40,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class FechamentoMesService {
 
-    private static final ZoneId ZONE_ID = ZoneId.of("America/Sao_Paulo");
     private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATA_HORA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final NumberFormat MOEDA = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
@@ -57,6 +57,8 @@ public class FechamentoMesService {
     private final String emailRemetente;
     private final List<String> emailDestinatarios;
     private final String emailAssunto;
+    private final Clock clock;
+    private final ReentrantLock execucao = new ReentrantLock();
 
     public FechamentoMesService(
             ConsertoRepository repository,
@@ -66,7 +68,8 @@ public class FechamentoMesService {
             @Value("${controljob.auditoria.diretorio:./data/auditoria}") String diretorioAuditoria,
             @Value("${controljob.email.remetente:}") String emailRemetente,
             @Value("${controljob.email.destinatario:}") String emailDestinatario,
-            @Value("${controljob.email.assunto:Relatório Mensal de Pagamentos}") String emailAssunto
+            @Value("${controljob.email.assunto:Relatório Mensal de Pagamentos}") String emailAssunto,
+            Clock clock
     ) {
         this.repository = repository;
         this.mailSender = mailSender;
@@ -79,12 +82,25 @@ public class FechamentoMesService {
                 .filter(destinatario -> !destinatario.isEmpty())
                 .toList();
         this.emailAssunto = emailAssunto;
+        this.clock = clock;
     }
 
     @Transactional
     public Resultado fecharMes() {
-        ZonedDateTime agora = ZonedDateTime.now(ZONE_ID);
-        YearMonth mes = YearMonth.now(ZONE_ID);
+        if (!execucao.tryLock()) {
+            return new Resultado(0, null, null, false,
+                    "Já existe um fechamento em andamento. Aguarde a conclusão antes de tentar novamente.");
+        }
+        try {
+            return executarFechamento();
+        } finally {
+            execucao.unlock();
+        }
+    }
+
+    private Resultado executarFechamento() {
+        ZonedDateTime agora = ZonedDateTime.now(clock);
+        YearMonth mes = YearMonth.now(clock);
         LocalDate ultimoDia = mes.atEndOfMonth();
         LocalDate hoje = agora.toLocalDate();
 
@@ -152,7 +168,7 @@ public class FechamentoMesService {
     ) {
         Map<String, Object> auditoria = new LinkedHashMap<>();
         auditoria.put("mes", mesLabel);
-        auditoria.put("anoMes", YearMonth.now(ZONE_ID).toString());
+        auditoria.put("anoMes", YearMonth.now(clock).toString());
         auditoria.put("geradoEm", DATA_HORA_BR.format(agora));
         auditoria.put("salarioFixo", salarioFixo);
         auditoria.put("valorTotalConsertos", valorTotal);

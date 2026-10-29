@@ -2,6 +2,7 @@ package com.controljob.service;
 
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +15,11 @@ public class LoginAttemptService {
     private static final Duration BLOQUEIO = Duration.ofMinutes(15);
 
     private final Map<String, Tentativa> tentativas = new ConcurrentHashMap<>();
+    private final Clock clock;
+
+    public LoginAttemptService(Clock clock) {
+        this.clock = clock;
+    }
 
     public int maxTentativas() {
         return MAX_TENTATIVAS;
@@ -25,10 +31,11 @@ public class LoginAttemptService {
     }
 
     public void registrarFalha(String usuario) {
-        long agora = System.currentTimeMillis();
+        long agora = clock.millis();
         tentativas.merge(chave(usuario), new Tentativa(agora, 1, -1), (atual, nova) -> {
-            long inicio = agora - atual.primeiraFalha() >= JANELA.toMillis() ? agora : atual.primeiraFalha();
-            int falhas = inicio == agora ? 1 : atual.falhas() + 1;
+            boolean reiniciar = agora - atual.primeiraFalha() >= JANELA.toMillis();
+            long inicio = reiniciar ? agora : atual.primeiraFalha();
+            int falhas = reiniciar ? 1 : atual.falhas() + 1;
             long bloqueio = falhas >= MAX_TENTATIVAS ? agora + BLOQUEIO.toMillis() : -1;
             return new Tentativa(inicio, falhas, bloqueio);
         });
@@ -43,7 +50,7 @@ public class LoginAttemptService {
         if (tentativa == null) {
             return false;
         }
-        long agora = System.currentTimeMillis();
+        long agora = clock.millis();
         if (tentativa.bloqueadoAte() > agora) {
             return true;
         }
@@ -54,7 +61,7 @@ public class LoginAttemptService {
     }
 
     private boolean bloqueioExpirado(Tentativa tentativa) {
-        return tentativa.bloqueadoAte() != -1 && tentativa.bloqueadoAte() <= System.currentTimeMillis();
+        return tentativa.bloqueadoAte() != -1 && tentativa.bloqueadoAte() <= clock.millis();
     }
 
     private static String chave(String usuario) {

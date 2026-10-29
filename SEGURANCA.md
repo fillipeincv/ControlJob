@@ -38,9 +38,10 @@ o console estava ligado.
 | **Média** | Container Docker roda como root (exploração → impacto máximo) | 🔜 em andamento |
 | **Média** | Sem HTTPS ponta a ponta; cookie de sessão sem `Secure` | 🔜 em andamento |
 | **Média** | Banco H2 sem senha + `AUTO_SERVER=TRUE` local | 🔜 em andamento |
-| **Média** | Erros internos expostos ao usuário (`e.getMessage()`) | 🔜 em andamento |
-| **Baixa** | CSV formula injection ao abrir auditoria no Excel | 🔜 em andamento |
-| **Baixa** | Mass assignment ao vincular a entidade `Conserto` direto do formulário | 🔜 em andamento |
+| **Média** | Erros internos expostos ao usuário (`e.getMessage()`) | ✅ aplicado |
+| **Baixa** | CSV formula injection ao abrir auditoria no Excel | ✅ aplicado |
+| **Baixa** | Mass assignment ao vincular a entidade `Conserto` direto do formulário | ✅ aplicado |
+| **Alta** | Migração de retirada rodava em todo startup e podia marcar consertos indevidamente | ✅ aplicado |
 | **Baixa** | Sem `Content-Security-Policy` / HSTS explícitos | 🔜 em andamento |
 | **Baixa** | Dependências precisam de atualização / varredura OWASP | 🔜 em andamento |
 | **Baixa** | `thymeleaf.cache` desligado; `spring.h2.console.enabled` por profile | 🔜 em andamento |
@@ -108,13 +109,12 @@ Ordem sugerida, uma a uma:
    `Secure` e adicionar HSTS.
 3. **Banco com autenticação** — definir senha do H2 (ou migrar para PostgreSQL)
    e desativar `AUTO_SERVER` em produção.
-4. **Erros amigáveis** — não devolver `e.getMessage()` na tela; logar o detalhe.
-5. **CSV/Excel hardening** — prefixar células que começam com `= + - @`.
-6. **DTOs de formulário** — impedir *mass assignment* no `Conserto`.
-7. **Dependências** — manter Spring Boot/OpenPDF atualizados e rodar varredura
+4. **Dependências** — manter Spring Boot/OpenPDF atualizados e rodar varredura
    OWASP no pipeline.
-8. **CSP** — adicionar `Content-Security-Policy` compatível com os estilos
+5. **CSP** — adicionar `Content-Security-Policy` compatível com os estilos
    atuais da aplicação.
+6. **Profiles de runtime** — `thymeleaf.cache` e `ddl-auto` específicos por
+   ambiente.
 
 ---
 
@@ -130,3 +130,9 @@ Com a aplicação rodando (ex.: `./mvnw spring-boot:run`):
 | `CONTROLJOB_ADMIN_SENHA` definida com banco vazio | no boot, o log mostra o admin criado via env |
 | `GET /relatorio` com perfil `LEITOR` | `403` |
 | `GET /relatorio` com perfil `ADMIN` | `200` |
+| `GET /consertos/{id}` inexistente | `404` com página amigável |
+| Editar/excluir conserto já fechado | bloqueado com mensagem de negócio |
+| CSV com célula iniciando em `=`, `+`, `-` ou `@` | célula prefixada com `'` |
+
+A suíte automatizada cobre esses cenários e as regras de comissão/fechamento:
+`./mvnw test` (67 testes, incluindo H2 em memória e MockMvc).

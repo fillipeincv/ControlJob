@@ -638,10 +638,24 @@ Conquistas desbloqueadas:
   + Salário fixo editável no painel do administrador (salvo no banco)
 ```
 
-**Validação:** a verificação foi **manual** — rodando a aplicação, criando
-consertos em todos os tipos, conferindo os totais do dashboard, disparando o
-fechamento e inspecionando o PDF, o JSON e o e-mail. Não há (ainda) suíte de
-testes automatizados; está no roadmap.
+**Validação:** a verificação inicial foi **manual** — rodando a aplicação,
+criando consertos em todos os tipos, conferindo os totais do dashboard,
+disparando o fechamento e inspecionando o PDF, o JSON e o e-mail. Em
+**2026-10-29** foi adicionada uma suíte automatizada com 67 testes (serviços,
+repositório em H2 e integração de segurança com MockMvc), executada no
+`./mvnw clean package`.
+
+### Atualização 2026-10-29 — testes e correções de segurança
+
+- Primeira suíte automatizada do projeto, cobrindo comissões, retirada,
+  fechamento, auditoria/CSV, lockout, usuários e autorização por perfil.
+- Migração de retirada histórica passou a ser **opt-in** e limitada a registros
+  anteriores a 2026-10-12; antes ela rodava em todo startup.
+- Formulário de conserto passou a usar DTO (fim do *mass assignment*), conserto
+  fechado ficou imutável, erros passaram a ter página amigável (404/400/409/500)
+  e o CSV neutraliza fórmulas.
+- Fechamento mensal ganhou lock contra execução concorrente, e o rate limit do
+  login passou a limpar entradas expiradas.
 
 ---
 
@@ -671,8 +685,8 @@ Os dados ficam em `./data/controljob` (H2 em arquivo).
 Ideias naturais, ainda **não** implementadas — listadas com transparência para
 quem quiser contribuir:
 
-- **Testes automatizados** (unitários para as regras de comissão e fechamento;
-  de integração para os repositórios e filtros).
+- **Ampliar a suíte de testes** (novos cenários de comissão/fechamento e
+  integração contínua).
 - **Migration de schema** com Flyway/Liquibase no lugar do `ddl-auto`.
 - **Banco relacional externo** (PostgreSQL) se o uso crescer.
 - **Troca de senha** e recuperação de acesso.

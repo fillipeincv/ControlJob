@@ -180,11 +180,22 @@ public class AuditoriaService {
     }
 
     private String campo(String valor) {
-        String limpo = valor == null ? "" : valor;
-        if (limpo.contains("\"") || limpo.contains(SEPARADOR_CSV) || limpo.contains("\n")) {
+        String limpo = neutralizarFormula(valor == null ? "" : valor);
+        if (limpo.contains("\"") || limpo.contains(SEPARADOR_CSV) || limpo.contains("\n") || limpo.contains("\r")) {
             return '"' + limpo.replace("\"", "\"\"") + '"';
         }
         return limpo;
+    }
+
+    private String neutralizarFormula(String valor) {
+        int inicio = 0;
+        while (inicio < valor.length() && Character.isWhitespace(valor.charAt(inicio))) {
+            inicio++;
+        }
+        if (inicio < valor.length() && "=+-@".indexOf(valor.charAt(inicio)) >= 0) {
+            return "'" + valor;
+        }
+        return valor;
     }
 
     private BigDecimal media(BigDecimal total, int quantidade) {

@@ -37,7 +37,7 @@
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
             <a class="btn btn-ghost" th:href="@{/}">← Voltar</a>
-            <a sec:authorize="hasRole('ADMIN')" class="btn btn-primary"
+            <a sec:authorize="hasRole('ADMIN')" class="btn btn-primary" th:if="${conserto.dataFechamento == null}"
                th:href="@{/consertos/{id}/editar(id=${conserto.id})}">Editar</a>
         </div>
     </section>
@@ -98,7 +98,7 @@
                   th:text="${conserto.dataRetirada == null ? 'Aguardando retirada' : 'Retirado'}">Aguardando</span>
         </div>
 
-        <form th:if="${conserto.dataRetirada == null}" th:action="@{/consertos/{id}/retirada(id=${conserto.id})}" method="post">
+        <form th:if="${conserto.dataRetirada == null and conserto.dataFechamento == null}" th:action="@{/consertos/{id}/retirada(id=${conserto.id})}" method="post">
             <div class="filters" style="grid-template-columns: minmax(200px, 260px) auto; align-items: end;">
                 <label>
                     Data da retirada
@@ -113,7 +113,7 @@
             </p>
         </form>
 
-        <div th:if="${conserto.dataRetirada != null}">
+        <div th:if="${conserto.dataRetirada != null and conserto.dataFechamento == null}">
             <p class="muted" style="margin: 0 0 0.75rem;">
                 Retirado pelo cliente em
                 <strong th:text="${#temporals.format(conserto.dataRetirada, 'dd/MM/yyyy')}">01/01/2026</strong>.
@@ -187,7 +187,7 @@
     <section class="panel" th:if="${conserto.imei == null or conserto.imei.isBlank()}">
         <div class="empty">
             Este conserto não possui IMEI registrado, então não é possível localizar o histórico do aparelho.
-            <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/{id}/editar(id=${conserto.id})}">Informar IMEI</a>.
+            <a sec:authorize="hasRole('ADMIN')" th:if="${conserto.dataFechamento == null}" th:href="@{/consertos/{id}/editar(id=${conserto.id})}">Informar IMEI</a>.
         </div>
     </section>
 </main>

@@ -10,7 +10,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "consertos")
+@Table(name = "consertos", indexes = {
+        @Index(name = "idx_conserto_fechamento_retirada", columnList = "data_fechamento, data_retirada"),
+        @Index(name = "idx_conserto_fechamento_data", columnList = "data_fechamento, data_conserto"),
+        @Index(name = "idx_conserto_imei", columnList = "imei"),
+        @Index(name = "idx_conserto_numero_os", columnList = "numero_os"),
+        @Index(name = "idx_conserto_tipo", columnList = "tipo_conserto"),
+        @Index(name = "idx_conserto_modelo", columnList = "modelo_aparelho")
+})
 public class Conserto {
 
     @Id

@@ -35,8 +35,8 @@ public interface ConsertoRepository extends JpaRepository<Conserto, Long>, JpaSp
     int marcarFechados(@Param("ids") List<Long> ids, @Param("fechamento") LocalDate fechamento);
 
     @Modifying
-    @Query("UPDATE Conserto c SET c.dataRetirada = c.dataConserto WHERE c.dataRetirada IS NULL")
-    int preencherRetiradaHistorica();
+    @Query("UPDATE Conserto c SET c.dataRetirada = c.dataConserto WHERE c.dataRetirada IS NULL AND c.dataConserto < :corte")
+    int preencherRetiradaHistorica(@Param("corte") LocalDate corte);
 
     @Query("SELECT DISTINCT c.modeloAparelho FROM Conserto c WHERE c.modeloAparelho IS NOT NULL AND c.modeloAparelho <> '' ORDER BY c.modeloAparelho")
     List<String> listarModelos();

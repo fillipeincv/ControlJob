@@ -1,5 +1,6 @@
 package com.controljob.service;
 
+import com.controljob.exception.RecursoNaoEncontradoException;
 import com.controljob.model.Conserto;
 import com.controljob.model.DashboardResumo;
 import com.controljob.model.TipoConserto;
@@ -39,11 +40,22 @@ public class ConsertoService {
     @Transactional(readOnly = true)
     public Conserto buscarPorId(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conserto não encontrado: " + id));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conserto não encontrado: " + id));
     }
 
     @Transactional
     public Conserto salvar(Conserto conserto) {
+        if (conserto.getId() != null) {
+            Conserto existente = buscarPorId(conserto.getId());
+            if (existente.getDataFechamento() != null) {
+                throw new IllegalStateException("Conserto já fechado no mês e não pode ser alterado.");
+            }
+            conserto.setDataRetirada(existente.getDataRetirada());
+            conserto.setDataFechamento(null);
+        } else {
+            conserto.setDataRetirada(null);
+            conserto.setDataFechamento(null);
+        }
         conserto.setImei(normalizarImei(conserto.getImei()));
         return repository.save(conserto);
     }
@@ -90,7 +102,11 @@ public class ConsertoService {
 
     @Transactional
     public void excluir(Long id) {
-        repository.deleteById(id);
+        Conserto conserto = buscarPorId(id);
+        if (conserto.getDataFechamento() != null) {
+            throw new IllegalStateException("Conserto já fechado no mês e não pode ser excluído.");
+        }
+        repository.delete(conserto);
     }
 
     @Transactional(readOnly = true)
