@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/motion.css}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 </head>
 <body>
@@ -18,11 +19,13 @@
     </a>
     <nav class="nav">
         <a th:href="@{/}" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">Dashboard</a>
-        <a th:href="@{/consertos/novo}" th:classappend="${activePage == 'novo'} ? 'active' : ''">Novo conserto</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}" th:classappend="${activePage == 'novo'} ? 'active' : ''">Novo conserto</a>
         <a th:href="@{/lojistas}" th:classappend="${activePage == 'lojistas'} ? 'active' : ''">Lojistas</a>
+        <a th:href="@{/historico}" th:classappend="${activePage == 'historico'} ? 'active' : ''">Histórico</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}" th:classappend="${activePage == 'admin'} ? 'active' : ''">Admin</a>
-        <a th:href="@{/usuarios}" th:classappend="${activePage == 'usuarios'} ? 'active' : ''">Usuários</a>
-        <a th:href="@{/relatorio}" th:classappend="${activePage == 'relatorio'} ? 'active' : ''">Relatório</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}" th:classappend="${activePage == 'usuarios'} ? 'active' : ''">Usuários</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}" th:classappend="${activePage == 'relatorio'} ? 'active' : ''">Relatório</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
     </nav>
 </header>
 
@@ -30,5 +33,6 @@
     <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
     <div th:replace="~{::content}">Conteúdo</div>
 </main>
+<script th:src="@{/js/page-transition.js}" defer></script>
 </body>
 </html>

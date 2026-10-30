@@ -4,9 +4,9 @@ Aplicação Java para controle de consertos, comissões e salário.
 
 ## Funcionalidades
 
-- Cadastro de consertos com: modelo, número da OS, IMEI (obrigatório), tipo, descrição, valor e data
+- Cadastro de consertos com: modelo, número da OS, IMEI (opcional), tipo, descrição, valor, data do conserto e controle de retirada pelo cliente (`dataRetirada`)
 - Dashboard com:
-  - valor total dos consertos
+  - valor total dos consertos já retirados pelo cliente (e contagem dos que aguardam retirada)
   - comissão acumulada
   - salário total (fixo + comissão)
 - **Histórico do aparelho**: ao abrir uma ordem de serviço (`/consertos/{id}`) é exibido o

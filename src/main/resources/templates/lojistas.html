@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/motion.css}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 </head>
 <body>
@@ -23,6 +24,7 @@
         <a th:href="@{/historico}">Histórico</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
         <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
     </nav>
 </header>
@@ -33,7 +35,7 @@
             <h1>Consertos para Lojistas</h1>
             <p class="muted">Registro dedicado dos serviços feitos para lojistas (comissão 50%).</p>
         </div>
-        <a class="btn btn-primary" th:href="@{/consertos/novo}">+ Registrar conserto</a>
+        <a sec:authorize="hasRole('ADMIN')" class="btn btn-primary" th:href="@{/consertos/novo}">+ Registrar conserto</a>
     </section>
 
     <section class="metrics compact">
@@ -62,7 +64,7 @@
                     <th>Descrição</th>
                     <th>Valor</th>
                     <th>Comissão (50%)</th>
-                    <th></th>
+                    <th sec:authorize="hasRole('ADMIN')"></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -78,7 +80,7 @@
                     <td class="desc" th:text="${c.descricao}">Descrição</td>
                     <td class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(c.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
                     <td class="mono earn" th:text="'R$ ' + ${#numbers.formatDecimal(c.comissao, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
-                    <td class="actions">
+                    <td sec:authorize="hasRole('ADMIN')" class="actions">
                         <a class="btn btn-ghost" th:href="@{/consertos/{id}/editar(id=${c.id})}">Editar</a>
                         <form th:action="@{/consertos/{id}/excluir(id=${c.id})}" method="post"
                               onsubmit="return confirm('Excluir este conserto?');">
@@ -91,5 +93,6 @@
         </div>
     </section>
 </main>
+<script th:src="@{/js/page-transition.js}" defer></script>
 </body>
 </html>

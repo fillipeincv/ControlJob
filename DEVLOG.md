@@ -595,6 +595,63 @@ REDE DE SEGURANÇA
 
 ---
 
+### Fase 13 — Interface Liquid Glass, transições de página e refinamento visual (v1.5)
+
+Com a base de dados e as regras de negócio blindadas por testes automatizados, o
+foco voltou para a **experiência de uso diário**. A interface escura original
+cumpria o papel funcional, mas os painéis tinham opacidade alta (`58%` de cinza
+escuro sólido) e havia pequenas inconsistências entre os templates.
+
+**1. Cards translúcidos inspirados no *Liquid Glass* (Apple / visionOS):**
+
+- A camada escura opaca dos cards (`.panel`, `.metric` e `.topbar`) foi reduzida
+  para apenas `16%` (`14%` nos cards de destaque âmbar e verde), combinada com um
+  gradiente diagonal de reflexo especular branco.
+- O filtro óptico (`--glass-blur`) passou a usar
+  `blur(32px) saturate(190%) brightness(1.06)`, amplificando a saturação das
+  luzes de fundo que atravessam o vidro sem prejudicar a leitura.
+- As bordas ganharam efeito de refração com máscara CSS (`::before` +
+  `mask-composite: exclude`) e brilho interno tridimensional (`inset box-shadow`).
+- Elementos internos (`--bg-soft`, `--line` e campos de formulário dentro de
+  `.panel` com `color-scheme: dark`) deixaram de usar cores hexadecimais sólidas
+  para manter a transparência contínua em tabelas, tags e gráficos.
+- O fundo (`body` e `body::before`) recebeu uma malha de luz ambiente distribuída
+  (âmbar, verde-esmeralda e azul-celeste central) para que todos os cards —
+  inclusive tabelas longas — refratem luz e cor.
+
+**2. Transições suaves entre páginas (`motion.css` + `page-transition.js`):**
+
+- Navegar entre páginas renderizadas no servidor ganhou fluidez com a **View
+  Transitions API** (`@view-transition { navigation: auto; }`): a barra superior
+  (`header.topbar`) permanece fixa enquanto o conteúdo principal (`main`) faz um
+  *fade + slide* vertical curto (`220ms`/`280ms`).
+- Para navegadores sem suporte nativo à API, um script leve
+  (`page-transition.js`) aplica a animação de saída nos cliques da navegação.
+- Tudo respeita `prefers-reduced-motion: reduce`, desativando animações e
+  transformações para quem prefere interface estática.
+
+**3. Correções de consistência, responsividade e segurança de rotas estáticas:**
+
+- **`/js/**` liberado no `SecurityConfig`:** as telas públicas (`/login` e
+  `/configurar-admin`) carregam o script de transição; a rota foi incluída no
+  `permitAll()` e coberta pelo `SecurityIntegrationTest`.
+- **Tabela de usuários (`/usuarios`):** corrigida a ausência da célula com o nome
+  do usuário (`u.nomeUsuario`) no corpo da tabela.
+- **Unificação da navegação e tipografia:** padronizados os links da `.topbar`,
+  as guardas `sec:authorize="hasRole('ADMIN')"` (incluindo ocultação de botões de
+  escrita para `LEITOR` em `/lojistas`) e a importação das fontes `Outfit` e
+  `IBM Plex Mono` em todos os 13 templates.
+- **Mobile e impressão:** `.metrics.cols-4` passou a colapsar para 1 coluna em
+  telas menores (`@media (max-width: 900px)`), e o `@media print` de `/relatorio`
+  desativa o `backdrop-filter` e as bordas especulares para gerar PDFs limpos.
+
+```
+POLIMENTO VISUAL
+[██████████████████████████████████████████] v1.5 — Liquid Glass e transições suaves
+```
+
+---
+
 ## 6. O método: como a IA foi usada (e como não foi)
 
 Seria desonesto dizer que "a IA fez tudo". Também seria desonesto esconder que ela
@@ -693,6 +750,8 @@ Conquistas desbloqueadas:
   + Fechamento agendado no último dia do mês
   + Deploy em Docker
   + Salário fixo editável no painel do administrador (salvo no banco)
+  + Fluxo de retirada pelo cliente e suíte com 67 testes automatizados
+  + Interface translúcida (Liquid Glass) e transições suaves de página
 ```
 
 **Validação:** a verificação inicial foi **manual** — rodando a aplicação,

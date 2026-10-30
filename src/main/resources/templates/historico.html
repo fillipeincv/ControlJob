@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/motion.css}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 </head>
 <body>
@@ -22,6 +23,7 @@
         <a th:href="@{/lojistas}">Lojistas</a>
         <a th:href="@{/historico}" class="active">Histórico</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}">Usuários</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
         <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
     </nav>
@@ -117,5 +119,6 @@
         </section>
     </div>
 </main>
+<script th:src="@{/js/page-transition.js}" defer></script>
 </body>
 </html>

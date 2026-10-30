@@ -3,12 +3,29 @@
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usuários · ControlJob</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/motion.css}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 </head>
 <body>
-<header class="topbar"><a class="brand" th:href="@{/}"><span class="brand-mark">CJ</span><span class="brand-name">ControlJob</span></a>
-    <nav class="nav"><a th:href="@{/}">Dashboard</a><a th:href="@{/consertos/novo}">Novo conserto</a><a th:href="@{/lojistas}">Lojistas</a><a th:href="@{/admin}">Admin</a><a th:href="@{/usuarios}" class="active">Usuários</a><form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form></nav>
+<header class="topbar">
+    <a class="brand" th:href="@{/}">
+        <span class="brand-mark">CJ</span>
+        <span class="brand-name">ControlJob</span>
+    </a>
+    <nav class="nav">
+        <a th:href="@{/}">Dashboard</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}">Novo conserto</a>
+        <a th:href="@{/lojistas}">Lojistas</a>
+        <a th:href="@{/historico}">Histórico</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}" class="active">Usuários</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}">Relatório</a>
+        <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    </nav>
 </header>
 <main class="container narrow">
     <div th:if="${mensagem}" class="flash" th:text="${mensagem}"></div>
@@ -21,7 +38,24 @@
             <button class="btn btn-primary" type="submit">Criar usuário</button>
         </form>
     </section>
-    <section class="panel table-panel"><h2>Acessos cadastrados</h2><table><thead><tr><th>Usuário</th><th>Perfil</th></tr></thead><tbody><tr th:each="u : ${usuarios}"><td class="mono" th:text="${u.perfil == T(com.controljob.model.PerfilUsuario).ADMIN ? 'Administrador' : 'Leitura'}">Leitura</td></tr></tbody></table></section>
+    <section class="panel table-panel">
+        <h2>Acessos cadastrados</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Usuário</th>
+                <th>Perfil</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="u : ${usuarios}">
+                <td class="mono" th:text="${u.nomeUsuario}">usuario</td>
+                <td th:text="${u.perfil == T(com.controljob.model.PerfilUsuario).ADMIN ? 'Administrador' : 'Leitura'}">Leitura</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
 </main>
+<script th:src="@{/js/page-transition.js}" defer></script>
 </body>
 </html>

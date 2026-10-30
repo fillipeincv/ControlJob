@@ -1,0 +1,92 @@
+/* Movimento da troca de página. O main sai e entra; a topbar não cruza em fade. */
+
+@view-transition {
+  navigation: auto;
+}
+
+header.topbar {
+  view-transition-name: app-topbar;
+}
+
+main {
+  view-transition-name: app-page;
+}
+
+::view-transition-group(app-topbar) {
+  animation: none;
+  z-index: 1;
+}
+
+::view-transition-old(app-topbar) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(app-topbar) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(app-page) {
+  animation: app-page-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(app-page) {
+  animation: app-page-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes app-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes app-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Sem View Transitions: o main entra sozinho no load. A saída usa .is-leaving. */
+@supports not (view-transition-name: none) {
+  @media (prefers-reduced-motion: no-preference) {
+    main {
+      animation: app-page-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+  }
+}
+
+main.is-leaving {
+  animation: app-page-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
+  ::view-transition-group(app-topbar),
+  ::view-transition-old(app-topbar),
+  ::view-transition-new(app-topbar),
+  ::view-transition-old(app-page),
+  ::view-transition-new(app-page),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  main,
+  main.is-leaving {
+    animation: none;
+  }
+}

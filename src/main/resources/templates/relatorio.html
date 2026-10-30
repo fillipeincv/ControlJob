@@ -8,13 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/motion.css}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <style>
-        .breakdown { list-style: none; margin: 0; padding: 0; }
-        .breakdown li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
-        .breakdown li:last-child { border-bottom: none; }
-        .breakdown em { color: var(--muted); font-style: normal; font-size: 0.9em; }
-        .breakdown strong { font-family: "IBM Plex Mono", monospace; }
         .breakdown .total-row { background: var(--bg-soft); border-radius: 8px; padding: 0.85rem 0.5rem; margin-top: 0.5rem; }
         .breakdown .total-row strong { font-size: 1.1em; color: var(--accent); }
         .summary-box { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0.5rem; background: var(--bg-soft); border-radius: 8px; margin-top: 0.5rem; }
@@ -25,6 +21,7 @@
         @media print {
             @page { size: A4 landscape; margin: 12mm; }
             html, body { background: #fff !important; color: #000 !important; }
+            body::before, .panel::before { display: none !important; }
             body { font-size: 10pt; line-height: 1.35; }
             .topbar, .page-head, .page-actions, .flash { display: none !important; }
             .container { max-width: none; width: 100%; padding: 0; margin: 0; }
@@ -36,6 +33,8 @@
                 box-shadow: none !important;
                 border-color: #999 !important;
                 background: #fff !important;
+                -webkit-backdrop-filter: none !important;
+                backdrop-filter: none !important;
                 -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
             .breakdown strong, .mono, .earn, .summary-box strong {
@@ -61,9 +60,10 @@
         <a th:href="@{/}" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">Dashboard</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/consertos/novo}" th:classappend="${activePage == 'novo'} ? 'active' : ''">Novo conserto</a>
         <a th:href="@{/lojistas}" th:classappend="${activePage == 'lojistas'} ? 'active' : ''">Lojistas</a>
+        <a th:href="@{/historico}">Histórico</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">Admin</a>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/usuarios}" th:classappend="${activePage == 'usuarios'} ? 'active' : ''">Usuários</a>
-        <a th:href="@{/relatorio}" class="active">Relatório</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/relatorio}" class="active">Relatório</a>
         <form class="logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
     </nav>
 </header>
@@ -113,7 +113,7 @@
         </ul>
         <div class="summary-box">
             <span class="muted" style="font-size: 0.9rem;">Salário fixo mensal</span>
-            <strong class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(dados.salarioFixo, 1, 'POINT', 2, 'COMMA')}">R$ 1.935,00</strong>
+            <strong class="mono" th:text="'R$ ' + ${#numbers.formatDecimal(dados.salarioFixo, 1, 'POINT', 2, 'COMMA')}">R$ 1.500,00</strong>
         </div>
         <div class="summary-box" style="background: rgba(240, 163, 94, 0.08); border: 1px solid rgba(240, 163, 94, 0.25);">
             <span style="font-weight: 600;">Salário total a pagar</span>
@@ -165,5 +165,6 @@
         </div>
     </section>
 </main>
+<script th:src="@{/js/page-transition.js}" defer></script>
 </body>
 </html>

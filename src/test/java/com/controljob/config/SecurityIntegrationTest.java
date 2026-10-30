@@ -71,6 +71,9 @@ class SecurityIntegrationTest {
     @Test
     void loginEConfiguracaoSaoPublicos() throws Exception {
         mockMvc.perform(get("/login")).andExpect(status().isOk());
+        mockMvc.perform(get("/css/style.css")).andExpect(status().isOk());
+        mockMvc.perform(get("/css/motion.css")).andExpect(status().isOk());
+        mockMvc.perform(get("/js/page-transition.js")).andExpect(status().isOk());
         mockMvc.perform(get("/configurar-admin"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"));
