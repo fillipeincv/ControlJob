@@ -618,6 +618,13 @@ escuro sólido) e havia pequenas inconsistências entre os templates.
 - O fundo (`body` e `body::before`) recebeu uma malha de luz ambiente distribuída
   (âmbar, verde-esmeralda e azul-celeste central) para que todos os cards —
   inclusive tabelas longas — refratem luz e cor.
+- **Barras e botões de navegação em cápsulas de vidro (*GlassContainer* /
+  *GlassView*):** o menu principal (`.nav`), as abas administrativas
+  (`.admin-tabs`) e a marca (`.brand`) viraram *docks* flutuantes em formato de
+  pílula (`border-radius: 999px`) com desfoque óptico e reflexo especular no
+  topo; os links (`.nav a`, `.admin-tabs a`), o botão `Sair` e todos os botões de
+  ação (`.btn`, `.btn-primary`, `.btn-ghost`, `.btn-danger`) ganharam acabamento
+  de pílula refrativa tridimensional no `:hover` e no estado `.active`.
 
 **2. Transições suaves entre páginas (`motion.css` + `page-transition.js`):**
 
