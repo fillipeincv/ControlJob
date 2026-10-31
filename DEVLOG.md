@@ -652,9 +652,17 @@ escuro sólido) e havia pequenas inconsistências entre os templates.
   telas menores (`@media (max-width: 900px)`), e o `@media print` de `/relatorio`
   desativa o `backdrop-filter` e as bordas especulares para gerar PDFs limpos.
 
+**Arquivos:** `static/css/style.css`, `static/css/motion.css`,
+`static/js/page-transition.js`, `config/SecurityConfig.java`,
+`templates/*.html`, `templates/admin/*.html`.
+
+**Validação:** suíte automatizada (`./mvnw test` com 67 testes verdes, incluindo
+verificação HTTP 200 dos novos ativos públicos `/css/motion.css` e
+`/js/page-transition.js` via MockMvc) e validação visual em produção após deploy.
+
 ```
-POLIMENTO VISUAL
-[██████████████████████████████████████████] v1.5 — Liquid Glass e transições suaves
+LEVEL UP — POLIMENTO VISUAL
+[██████████████████████████████████████████] v1.5 — Liquid Glass, cápsulas de vidro e transições suaves
 ```
 
 ---
